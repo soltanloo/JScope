@@ -1,0 +1,48 @@
+{
+	"name": "coverage-as-promised",
+	"description": "VSCode extension for promise coverage",
+	"version": "0.0.1",
+	"publisher": "mohganji",
+	"engines": {
+		"vscode": "^1.32.0"
+	},
+	"activationEvents": [
+		"onCommand:cap.refresh",
+		"onView:cap_tree_view"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "cap.refresh",
+				"title": "CAP: Refresh Tree"
+			},
+			{
+				"command": "cap.get_workspace",
+				"title": "CAP: Select Workspace"
+			}
+		],
+		"views": {
+			"explorer": [
+				{
+					"id": "cap_tree_view",
+					"name": "Promise Coverage view"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint . --ext .ts,.tsx",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.32.0",
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/eslint-plugin": "^4.16.0",
+		"@typescript-eslint/parser": "^4.16.0",
+		"eslint": "^7.21.0",
+		"typescript": "^4.2.2"
+	}
+}
