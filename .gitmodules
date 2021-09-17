@@ -1,0 +1,3 @@
+[submodule "async-coverage"]
+	path = async-coverage
+	url = git@github.com:MohGanji/async-coverage.git
