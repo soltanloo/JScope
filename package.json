@@ -33,6 +33,10 @@
 		}
 	},
 	"scripts": {
+		"build": "npm run build:main && npm run build:pull-submodules && npm run build:build-submodules",
+		"build:main": "npm i",
+		"build:pull-submodules": "git submodule update --init",
+		"build:build-submodules": "cd async-coverage && yarn install && cd ..",
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"lint": "eslint . --ext .ts,.tsx",
