@@ -1,19 +1,7 @@
 import * as vscode from 'vscode'
+import { P_TYPES } from './constants'
 
-const P_TYPES = {
-    NewPromise: 'NewPromise',
-    AsyncFunction: 'AsyncFunction',
-    Await: 'Await',
-    PromiseThen: 'PromiseThen',
-    PromiseCatch: 'PromiseCatch',
-    PromiseResolve: 'PromiseResolve',
-    PromiseReject: 'PromiseReject',
-    PromiseAll: 'PromiseAll',
-    PromiseRace: 'PromiseRace',
-    CallbackArg: 'CallbackArg',
-  }
-
-export function covertLocationToUriAndRange(location: string) {
+export function convertLocationToUriAndRange(location: string) {
     let loc = location.replace(/\)|\(/g, '').split(':')
     let [filepath, startLine, startCol, endLine, endCol] = loc
 

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { TreeItem, TreeItemType } from './TreeItem';
-import { covertLocationToUriAndRange, getCoverageLabel, getCoverageStatusForPromise } from './utils';
+import { convertLocationToUriAndRange, getCoverageLabel, getCoverageStatusForPromise } from './utils';
 
 export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     
@@ -21,7 +21,7 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             let loc = val['location']
             let treeItem = new TreeItem({label: id, location: loc})
 
-            const {range, uri} = covertLocationToUriAndRange(loc)
+            const {range, uri} = convertLocationToUriAndRange(loc)
             treeItem.command = {
                 command: "vscode.open",
                 arguments: [uri, {selection: range, preserveFocus: false}],

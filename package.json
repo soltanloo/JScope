@@ -8,6 +8,7 @@
 	},
 	"activationEvents": [
 		"onCommand:cap.refresh",
+		"onCommand:cap.run-coverage",
 		"onView:cap_tree_view"
 	],
 	"main": "./out/extension.js",
@@ -18,8 +19,8 @@
 				"title": "CAP: Refresh Tree"
 			},
 			{
-				"command": "cap.get_workspace",
-				"title": "CAP: Select Workspace"
+				"command": "cap.run-coverage",
+				"title": "CAP: Run Promise Coverage"
 			}
 		],
 		"views": {
