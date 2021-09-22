@@ -267,6 +267,7 @@ const promiseMap = {
 
 
 export function activate(context: vscode.ExtensionContext) {
+  const _channel = vscode.window.createOutputChannel("CAP");
   // let promiseMap = JSON.parse(fs.readFileSync(datafile, 'utf8'))
   let workspaceDir: vscode.Uri;
   const promiseTreeProvider = new TreeDataProvider()
@@ -279,7 +280,7 @@ export function activate(context: vscode.ExtensionContext) {
     // await context.globalState.update(STORAGE_KEYS.NODEPROF_PATH, nodeprofPath)
     let nodeprofPath = path.resolve('/Users/m0hammad/SFU/coverage/workspace-nodeprof/nodeprof.js', 'nodeprof.jar')
     
-    const logUri = await Analyzer.runAnalysis(context, nodeprofPath)
+    const logUri = await Analyzer.runAnalysis(context, _channel, nodeprofPath)
     if(logUri){
       promiseTreeProvider.refresh(context, logUri)
     }
