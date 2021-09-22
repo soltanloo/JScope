@@ -1,3 +1,4 @@
+import { timeStamp } from 'console';
 import * as vscode from 'vscode'
 import { Coverage } from './Coverage';
 import { TreeItem, TreeItemType } from './TreeItem';
@@ -8,17 +9,22 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined | void> = new vscode.EventEmitter<TreeItem | undefined | void>();
     readonly onDidChangeTreeData?: vscode.Event<TreeItem|void|undefined>|undefined = this._onDidChangeTreeData.event;
     
+    private _channel: vscode.OutputChannel;
     private data: TreeItem[];
     _workspaceDir: vscode.Uri | undefined;
     private cov: Coverage;
     
     private async _updateTreeData() {
+        this._channel.appendLine('> Updating tree data new promiseMap...')
         const promiseMap = await this.cov.getPromiseMap()
+        this._channel.appendLine(`> PromiseMap size: ${Object.keys(promiseMap).length}`)
         this.data = Object.entries(promiseMap).map((p) => {
             const id: string = p[0]
             const val: any = p[1]
             let loc = val['location']
-            let label = val['code'].length > 15 ? val['code'].substr(0, 12) + '...' : val['code']
+            this._channel.appendLine(`> valcode: ${val['code']}, ${typeof val['code']} cid: ${val['cid']}, id:${id}`)
+            let label = val['code'] && val['code'].length > 20 ? val['code'].substr(0, 17) + '...' : val['code']
+            this._channel.appendLine(`> adding new tree leaf: label: ${label}, location: ${loc}`)
             let treeItem = new TreeItem({label: label, location: loc})
 
             const {range, uri} = convertLocationToUriAndRange(loc)
@@ -44,13 +50,15 @@ __Execution__   : \`${getCoverageLabel(status, 'execute', 'fulfill')}\`, \`${get
     }
 
     refresh(context: vscode.ExtensionContext, logUri: vscode.Uri) {
+        this._channel.appendLine('> refreshing tree data...')
         this.cov = new Coverage(logUri)
         this.cov.getPromiseMap()
         this._updateTreeData();
     }
     
-    constructor() {
+    constructor(_channel: vscode.OutputChannel) {
         this.data = []
+        this._channel = _channel
         this.cov = new Coverage()
     }
     

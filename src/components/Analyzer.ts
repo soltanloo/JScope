@@ -14,12 +14,12 @@ export class Analyzer {
     static async runAnalysis(context: vscode.ExtensionContext, _channel: vscode.OutputChannel, nodeprofPath: string): Promise<Uri|undefined> {
         // return Uri.file(`/Users/m0hammad/SFU/pc-promisecover/benchmark-logs/node-promise-mysql/node-promise-mysql.log`)
         if(vscode.workspace.workspaceFolders === undefined) {
-            const message = "CAP: No open workspace found, open a folder an try again" ;
+            const message = "> No open workspace found, open a folder an try again" ;
             _channel.appendLine(message)
             vscode.window.showErrorMessage(message);
             return
         }
-        _channel.appendLine(`CAP: Running analysis on ${vscode.workspace.workspaceFolders[0].name}`) 
+        _channel.appendLine(`> Running analysis on ${vscode.workspace.workspaceFolders[0].name}`) 
         await Analyzer.createLogDirIfNotExist(ANALYSIS_PATHS.TMP_LOG_DIR)
         const testFramework = await Analyzer.askForTestFramework();
         const nameOfLogFile = vscode.workspace.workspaceFolders[0] ? `${vscode.workspace.workspaceFolders[0].name}.log` : 'output.log'
@@ -36,18 +36,18 @@ export class Analyzer {
         
         
         // vscode.window.showInformationMessage(`cmd: ${cmd}`);
-        _channel.appendLine(`CAP: cmd: ${cmd}`) 
+        _channel.appendLine(`> cmd: ${cmd}`) 
         const {stdout, stderr} = await sh(cmd)
-        _channel.appendLine(`CAP: stdout: ${stdout}`) 
-        _channel.appendLine(`CAP: stderr: ${stderr}`) 
-        _channel.appendLine(`CAP: Finished running analysis for ${vscode.workspace.workspaceFolders[0].name}`) 
+        _channel.appendLine(`> stdout: ${stdout}`) 
+        _channel.appendLine(`> stderr: ${stderr}`) 
+        _channel.appendLine(`> Finished running analysis for ${vscode.workspace.workspaceFolders[0].name}`) 
         
         return outputLogUri
     }
 
     static async askForTestFramework(): Promise<TestFrameworkEnum> {
         // TODO: Prompt user to select between 'tap' and 'mocha'
-        return TestFrameworkEnum.mocha
+        return TestFrameworkEnum.tap
     }
 
     static createCommand(...args: any[]) {

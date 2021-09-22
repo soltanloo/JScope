@@ -270,7 +270,7 @@ export function activate(context: vscode.ExtensionContext) {
   const _channel = vscode.window.createOutputChannel("CAP");
   // let promiseMap = JSON.parse(fs.readFileSync(datafile, 'utf8'))
   let workspaceDir: vscode.Uri;
-  const promiseTreeProvider = new TreeDataProvider()
+  const promiseTreeProvider = new TreeDataProvider(_channel)
   
   vscode.window.registerTreeDataProvider('cap_tree_view', promiseTreeProvider);
   // vscode.commands.registerCommand('cap.refresh', () => promiseTreeProvider.refresh());

@@ -129,6 +129,7 @@ export class Coverage {
                     iid: log.iid,
                     cid: log.cid,
                     location: log.location,
+                    code: log.code,
                     time: counter,
                 })
             }
