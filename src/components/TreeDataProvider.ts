@@ -18,7 +18,8 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
             const id: string = p[0]
             const val: any = p[1]
             let loc = val['location']
-            let treeItem = new TreeItem({label: val['code'], location: loc})
+            let label = val['code'].length > 15 ? val['code'].substr(0, 12) + '...' : val['code']
+            let treeItem = new TreeItem({label: label, location: loc})
 
             const {range, uri} = convertLocationToUriAndRange(loc)
             treeItem.command = {
