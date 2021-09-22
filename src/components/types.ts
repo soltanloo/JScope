@@ -1,0 +1,1 @@
+export type location = `${string}:${string}:${string}:${string}:${string}`

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { Coverage } from './Coverage';
 import { TreeItem, TreeItemType } from './TreeItem';
 import { convertLocationToUriAndRange, getCoverageLabel, getCoverageStatusForPromise } from './utils';
 
@@ -7,19 +8,17 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined | void> = new vscode.EventEmitter<TreeItem | undefined | void>();
     readonly onDidChangeTreeData?: vscode.Event<TreeItem|void|undefined>|undefined = this._onDidChangeTreeData.event;
     
-    data: TreeItem[];
+    private data: TreeItem[];
     _workspaceDir: vscode.Uri | undefined;
+    private cov: Coverage;
     
-    refresh() {
-        this._onDidChangeTreeData.fire();
-    }
-    
-    constructor(promiseMap: any) {
+    private async _updateTreeData() {
+        const promiseMap = await this.cov.getPromiseMap()
         this.data = Object.entries(promiseMap).map((p) => {
             const id: string = p[0]
             const val: any = p[1]
             let loc = val['location']
-            let treeItem = new TreeItem({label: id, location: loc})
+            let treeItem = new TreeItem({label: val['code'], location: loc})
 
             const {range, uri} = convertLocationToUriAndRange(loc)
             treeItem.command = {
@@ -40,6 +39,18 @@ __Execution__   : \`${getCoverageLabel(status, 'execute', 'fulfill')}\`, \`${get
             
             return treeItem;
         })
+        this._onDidChangeTreeData.fire();
+    }
+
+    refresh(context: vscode.ExtensionContext, logUri: vscode.Uri) {
+        this.cov = new Coverage(logUri)
+        this.cov.getPromiseMap()
+        this._updateTreeData();
+    }
+    
+    constructor() {
+        this.data = []
+        this.cov = new Coverage()
     }
     
     getTreeItem(element: TreeItem): vscode.TreeItem|Thenable<vscode.TreeItem> {

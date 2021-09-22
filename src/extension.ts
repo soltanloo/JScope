@@ -269,17 +269,20 @@ const promiseMap = {
 export function activate(context: vscode.ExtensionContext) {
   // let promiseMap = JSON.parse(fs.readFileSync(datafile, 'utf8'))
   let workspaceDir: vscode.Uri;
-  const treeProvider = new TreeDataProvider(promiseMap)
+  const promiseTreeProvider = new TreeDataProvider()
   
-  vscode.window.registerTreeDataProvider('cap_tree_view', treeProvider);
-  vscode.commands.registerCommand('cap.refresh', () => treeProvider.refresh());
+  vscode.window.registerTreeDataProvider('cap_tree_view', promiseTreeProvider);
+  // vscode.commands.registerCommand('cap.refresh', () => promiseTreeProvider.refresh());
   vscode.commands.registerCommand('cap.run-coverage', async () => {
     // let nodeprofPath = await askForNodeprofPath(); // TODO:
     // nodeprofPath = path.resolve(nodeprofPath, 'nodeprof.jar')
     // await context.globalState.update(STORAGE_KEYS.NODEPROF_PATH, nodeprofPath)
     let nodeprofPath = path.resolve('/Users/m0hammad/SFU/coverage/workspace-nodeprof/nodeprof.js', 'nodeprof.jar')
     
-    await Analyzer.runAnalysis(nodeprofPath, context)
+    const logUri = await Analyzer.runAnalysis(context, nodeprofPath)
+    if(logUri){
+      promiseTreeProvider.refresh(context, logUri)
+    }
   });
   
   // TODO: Use this for adding diagnostics on promises. https://raw.githubusercontent.com/microsoft/vscode-extension-samples/main/diagnostic-related-information-sample/src/extension.ts

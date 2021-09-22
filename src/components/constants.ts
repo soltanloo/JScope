@@ -29,3 +29,13 @@ export const P_TYPES = {
     PromiseRace: 'PromiseRace',
     CallbackArg: 'CallbackArg',
 }
+
+export const LOG_TAGS = {
+    NEW_PROMISE: 'new-promise',
+    SETTLEMENT: 'settle',
+    REGISTER: 'register',
+    EXECUTE: 'execute',
+    INVOKE_FUN: 'invoke-fun',
+    TRY_CATCH: 'try-catch',
+    AWAIT: 'await',
+  }
