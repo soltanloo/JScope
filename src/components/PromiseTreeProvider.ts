@@ -1,10 +1,34 @@
+import chalk = require('chalk');
 import * as vscode from 'vscode'
 import { Coverage } from './Coverage';
 import { TreeItem, TreeItemType } from './TreeItem';
 import { convertLocationToUriAndRange, getCoverageLabel, getCoverageStatusForPromise } from './utils';
 
-export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
+export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
+
+    private static instance: PromiseTreeProvider | undefined;
+    private _channel: vscode.OutputChannel;
     
+    private constructor(_channel?: vscode.OutputChannel) {
+        this.data = []
+        this.cov = new Coverage()
+        this._channel = _channel || vscode.window.createOutputChannel('CAP');
+    }
+
+    public static destroyExisting() {
+        PromiseTreeProvider.instance = undefined;
+
+    }
+    
+    public static getInstance(_channel?: vscode.OutputChannel): PromiseTreeProvider {
+        if (!PromiseTreeProvider.instance) {
+            PromiseTreeProvider.instance = new PromiseTreeProvider(_channel);
+        }
+
+        return PromiseTreeProvider.instance;
+    }
+
+
     private _onDidChangeTreeData: vscode.EventEmitter<TreeItem | undefined | void> = new vscode.EventEmitter<TreeItem | undefined | void>();
     readonly onDidChangeTreeData?: vscode.Event<TreeItem|void|undefined>|undefined = this._onDidChangeTreeData.event;
     
@@ -13,12 +37,20 @@ export class TreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
     private cov: Coverage;
     
     private async _updateTreeData() {
-        const promiseMap = await this.cov.getPromiseMap()
+        this._channel.appendLine('> Updating tree data with new promiseMap...')
+        const promiseMap = await this.cov.getPromiseMap() // TODO: Handle a case where the log file may not exist.
+        const coverageReport = await this.cov.getCoverageReports()
+        this._channel.appendLine(`---`)
+        this._channel.appendLine(`> Coverage: ${JSON.stringify(coverageReport)}`)
+        this._channel.appendLine(`---`)
+        this._channel.appendLine(`> PromiseMap Size: ${Object.keys(promiseMap).length}`)
         this.data = Object.entries(promiseMap).map((p) => {
             const id: string = p[0]
             const val: any = p[1]
             let loc = val['location']
-            let label = val['code'].length > 15 ? val['code'].substr(0, 12) + '...' : val['code']
+            // this._channel.appendLine(`> valcode: ${val['code']}, ${typeof val['code']} cid: ${val['cid']}, id:${id}`)
+            let label = val['code'] && val['code'].length > 20 ? val['code'].substr(0, 17) + '...' : val['code']
+            // this._channel.appendLine(`> adding new tree leaf: label: ${label}, location: ${loc}`)
             let treeItem = new TreeItem({label: label, location: loc})
 
             const {range, uri} = convertLocationToUriAndRange(loc)
@@ -40,18 +72,13 @@ __Execution__   : \`${getCoverageLabel(status, 'execute', 'fulfill')}\`, \`${get
             
             return treeItem;
         })
-        this._onDidChangeTreeData.fire();
+        this._onDidChangeTreeData.fire(); // TODO::::: IN CHERA FIRE NEMISHE???
     }
 
-    refresh(context: vscode.ExtensionContext, logUri: vscode.Uri) {
+    refresh(logUri: vscode.Uri) {
+        this._channel.appendLine(`> refreshing tree... ${logUri.path}`)
         this.cov = new Coverage(logUri)
-        this.cov.getPromiseMap()
         this._updateTreeData();
-    }
-    
-    constructor() {
-        this.data = []
-        this.cov = new Coverage()
     }
     
     getTreeItem(element: TreeItem): vscode.TreeItem|Thenable<vscode.TreeItem> {

@@ -39,3 +39,8 @@ export const LOG_TAGS = {
     TRY_CATCH: 'try-catch',
     AWAIT: 'await',
   }
+
+export enum CoverageGroupByEnum {
+    file= 'file',
+    promiseType = 'promiseType',
+}
