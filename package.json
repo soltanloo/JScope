@@ -9,25 +9,54 @@
 	"activationEvents": [
 		"onCommand:cap.refresh",
 		"onCommand:cap.run-coverage",
-		"onView:cap_tree_view"
+		"onView:cap-view-container",
+		"onView:cap-tree-view",
+		"onView:cap-config-webview",
+		"onCommand:calicoColors.addColor",
+		"onCommand:calicoColors.clearColors"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "cap-view-container",
+                    "title": "CAP",
+                    "icon": "media/area.png"
+                }
+            ]
+        },
 		"commands": [
-			{
-				"command": "cap.refresh",
-				"title": "CAP: Refresh Tree"
-			},
 			{
 				"command": "cap.run-coverage",
 				"title": "CAP: Run Promise Coverage"
+			},
+			{
+				"command": "cap-config.update-config",
+				"category": "CAP: Update Config",
+				"title": "Update Promise Coverage Configurations",
+				"icon": "$(clear-all)"
 			}
 		],
 		"views": {
-			"explorer": [
+			"cap-view-container": [
 				{
-					"id": "cap_tree_view",
+					"id": "cap-config-webview",
+					"type": "webview",
+					"name": "Configure Promise Tree"
+				},
+				{
+					"id": "cap-tree-view",
 					"name": "Promise Coverage view"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "calicoColors.clearColors",
+					"group": "navigation",
+					"when": "view == calicoColors.colorsView"
 				}
 			]
 		}

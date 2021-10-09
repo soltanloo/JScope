@@ -8,6 +8,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
     private static instance: PromiseTreeProvider | undefined;
     private _channel: vscode.OutputChannel;
+    private _query: string | undefined // Used to filter tree results.
     
     private constructor(_channel?: vscode.OutputChannel) {
         this.data = []
@@ -38,7 +39,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     
     private async _updateTreeData() {
         this._channel.appendLine('> Updating tree data with new promiseMap...')
-        const promiseMap = await this.cov.getPromiseMap() // TODO: Handle a case where the log file may not exist.
+        const promiseMap = await this.cov.getPromiseMap({}, this._query) // TODO: Handle a case where the log file may not exist.
         const coverageReport = await this.cov.getCoverageReports()
         this._channel.appendLine(`---`)
         this._channel.appendLine(`> Coverage: ${JSON.stringify(coverageReport)}`)
@@ -50,6 +51,18 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             let loc = val['location']
             // this._channel.appendLine(`> valcode: ${val['code']}, ${typeof val['code']} cid: ${val['cid']}, id:${id}`)
             let label = val['code'] && val['code'].length > 20 ? val['code'].substr(0, 17) + '...' : val['code']
+            if(!!this._query) {
+                let labelHighlightStart = label.indexOf(this._query)
+                if(labelHighlightStart !== -1) {
+                    label = {
+                        label: label, 
+                        highlights: [[
+                            labelHighlightStart, 
+                            Math.min(labelHighlightStart + this._query.length, label.length)
+                        ]]
+                    }
+                }
+            }
             // this._channel.appendLine(`> adding new tree leaf: label: ${label}, location: ${loc}`)
             let treeItem = new TreeItem({label: label, location: loc})
 
@@ -59,6 +72,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 arguments: [uri, {selection: range, preserveFocus: false}],
                 title: ""
             }
+            
             treeItem.description = val['type']
             const status = getCoverageStatusForPromise(val);
             treeItem.tooltip = new vscode.MarkdownString(
@@ -75,8 +89,8 @@ __Execution__   : \`${getCoverageLabel(status, 'execute', 'fulfill')}\`, \`${get
         this._onDidChangeTreeData.fire(); // TODO::::: IN CHERA FIRE NEMISHE???
     }
 
-    refresh(logUri: vscode.Uri) {
-        this._channel.appendLine(`> refreshing tree... ${logUri.path}`)
+    refresh(logUri?: vscode.Uri) {
+        this._channel.appendLine(`> refreshing tree... ${logUri?.path}`)
         this.cov = new Coverage(logUri)
         this._updateTreeData();
     }
@@ -90,6 +104,22 @@ __Execution__   : \`${getCoverageLabel(status, 'execute', 'fulfill')}\`, \`${get
             return this.data;
         }
         return element.children;
+    }
+
+    updateConfig(config: {promiseType?: string[], query?: string, coverageType?: string}) {
+        this._channel.appendLine(JSON.stringify(config))
+    }
+
+    updateSearchQuery(query: string) {
+        this._query = query;
+        this._channel.appendLine(`query: ${this._query}`)
+        this._updateTreeData()
+    }
+
+    empty() {
+        this._channel.appendLine("Empty was called on the tree.")
+        this.cov.clear();
+        this._updateTreeData()
     }
 }
 

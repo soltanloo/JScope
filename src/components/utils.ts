@@ -36,3 +36,10 @@ export function getCoverageLabel(status: any, coverageType: string, fulfillOrRej
     else if(status[coverageType][fulfillOrReject] === true) return '✔️'
     else return '✖️'
 }
+
+export function objectFilter(obj: any, predicate: Function){
+    return Object.keys(obj)
+        .filter( key => predicate(obj[key]) )
+        .reduce( (res, key) => Object.assign(res, { [key]: obj[key] }), {} );
+} 
+    

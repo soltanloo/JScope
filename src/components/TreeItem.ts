@@ -12,7 +12,7 @@ export class TreeItem extends vscode.TreeItem {
     location: string;
 
     constructor({label, children, type, location}: 
-        {label: string, children?: TreeItem[], type?: TreeItemType, location: string} ) {
+        {label: string | vscode.TreeItemLabel, children?: TreeItem[], type?: TreeItemType, location: string} ) {
         super(
             label,
             children === undefined ? vscode.TreeItemCollapsibleState.None :

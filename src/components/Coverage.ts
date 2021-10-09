@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { P_TYPES, LOG_TAGS, CoverageGroupByEnum } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
+import { objectFilter } from './utils'
 
 
 export class Coverage {
@@ -12,6 +13,11 @@ export class Coverage {
     constructor(logUri?: vscode.Uri) {
         this._logUri = logUri || vscode.Uri.file('')
         this._logs = []
+    }
+
+    clear() {
+        this._logs = [];
+        this._promiseMap = {}
     }
 
     private async _getLogs() {
@@ -88,15 +94,25 @@ export class Coverage {
     }
 
     // returns a promise map based on the logs in filepath
-    async getPromiseMap() {
-        if (!!this._promiseMap) return this._promiseMap
-        await this._getLogs()
-        let promiseList: any[] = []
-        promiseList = await this._pass1_addPromises(this._logs, promiseList)
-        let { promiseMap, cidToIdMap } = await this._pass2_mergePromisesBasedOnIid(promiseList)
-        promiseMap = await this._pass3_addReactions(this._logs, promiseMap, cidToIdMap)
-        promiseMap = await this._pass4_handleTryCatchBlocks(this._logs, promiseMap)
-        this._promiseMap = promiseMap
+    async getPromiseMap(config?: any, query?: string) {
+        let promiseMap = {}
+        if (!!this._promiseMap) {
+            promiseMap = this._promiseMap
+        }
+        else {
+            await this._getLogs()
+            let promiseList: any[] = []
+            promiseList = await this._pass1_addPromises(this._logs, promiseList)
+            let res = await this._pass2_mergePromisesBasedOnIid(promiseList)
+            promiseMap = res.promiseMap
+            promiseMap = await this._pass3_addReactions(this._logs, promiseMap, res.cidToIdMap)
+            promiseMap = await this._pass4_handleTryCatchBlocks(this._logs, promiseMap)
+            this._promiseMap = promiseMap
+        }
+        
+        if(!!query) {
+            promiseMap = objectFilter(promiseMap, (val: any) => val['code'].includes(query))
+        }
         return promiseMap
     }
 
