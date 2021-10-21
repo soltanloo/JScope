@@ -85,7 +85,7 @@ export class Analyzer {
         this._channel.appendLine(`> Finished running analysis for ${this.workspace.name}`) 
         this._channel.appendLine(`> output URI: ${outputLogUri.path}`)
         
-        PromiseTreeProvider.getInstance().refresh(outputLogUri)
+        PromiseTreeProvider.getInstance(vscode.Uri.file(this._extensionPath), this._channel).refresh(outputLogUri)
     }
 
     async updateSelectedWorkspace(newWorkspace: vscode.WorkspaceFolder) {

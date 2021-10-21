@@ -16,7 +16,7 @@ export class TreeItem extends vscode.TreeItem {
         super(
             label,
             children === undefined ? vscode.TreeItemCollapsibleState.None :
-                                    vscode.TreeItemCollapsibleState.Expanded);
+                                    vscode.TreeItemCollapsibleState.Collapsed);
         this.children = children;
         this.type = type || TreeItemType.promise;
         this.location = location;

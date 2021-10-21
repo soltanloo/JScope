@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as path from 'path'
 import { P_TYPES } from './constants'
 
 export function convertLocationToUriAndRange(location: string) {
@@ -43,3 +44,10 @@ export function objectFilter(obj: any, predicate: Function){
         .reduce( (res, key) => Object.assign(res, { [key]: obj[key] }), {} );
 } 
     
+export function trimLabel(label: string): string {
+    return label && label.length > 20 ? label.substr(0, 17) + '...' : label
+}
+
+export function getIconPath(extensionPath: string, icon: string): vscode.Uri {
+    return vscode.Uri.file(path.join(extensionPath, 'media', 'icons', icon))
+}
