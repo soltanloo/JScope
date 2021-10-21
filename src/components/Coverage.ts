@@ -152,7 +152,6 @@ export class Coverage {
                     type: log.ftype,
                     iid: log.iid,
                     cid: log.cid,
-                    code: log.code,
                     location: log.location,
                     code: log.code,
                     time: counter,
