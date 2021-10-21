@@ -94,7 +94,10 @@ export class Coverage {
     }
 
     // returns a promise map based on the logs in filepath
-    async getPromiseMap(config?: any, query?: string) {
+    async getPromiseMap(
+        config?: {query?: string, promiseTypes: string[], coverageType: string}, 
+        channel?: vscode.OutputChannel
+    ) {
         let promiseMap = {}
         if (!!this._promiseMap) {
             promiseMap = this._promiseMap
@@ -103,15 +106,18 @@ export class Coverage {
             await this._getLogs()
             let promiseList: any[] = []
             promiseList = await this._pass1_addPromises(this._logs, promiseList)
-            let res = await this._pass2_mergePromisesBasedOnIid(promiseList)
+            let res = await this._pass2_mergePromisesBasedOnIid(promiseList, channel)
             promiseMap = res.promiseMap
             promiseMap = await this._pass3_addReactions(this._logs, promiseMap, res.cidToIdMap)
             promiseMap = await this._pass4_handleTryCatchBlocks(this._logs, promiseMap)
             this._promiseMap = promiseMap
         }
         
-        if(!!query) {
-            promiseMap = objectFilter(promiseMap, (val: any) => val['code'].includes(query))
+        if(!!config?.query) {
+            promiseMap = objectFilter(promiseMap, (val: any) => val['code'].includes(config.query))
+        }
+        if(!config?.promiseTypes.includes('all')) {
+            promiseMap = objectFilter(promiseMap, (val: any) => config?.promiseTypes.includes(val['type']))
         }
         return promiseMap
     }
@@ -176,7 +182,7 @@ export class Coverage {
      * returns a map of promises based on an id + a mapping from cid to pairId
      * id is pair of <definitionIid, firstCallSiteIid> second one can be null, replaced by _
      */
-    private async _pass2_mergePromisesBasedOnIid(promiseList: any[]) {
+    private async _pass2_mergePromisesBasedOnIid(promiseList: any[], channel?: vscode.OutputChannel) {
         // TODO: FIX BUGS.
         // key: cid, 
         // val: Obj{p: PromiseInfo, observedTwice: boolean}
@@ -189,6 +195,8 @@ export class Coverage {
 
         // console.log('plist: ', promiseList)
         promiseList.reduce((_, p) => {
+            channel?.appendLine(`PASS2: promise ${JSON.stringify(p)}`)
+            channel?.appendLine(`PASS2: ---`)
             // console.log('p', p)
             const definitionPromise = bufferPromiseMap[p.cid]
             if (!definitionPromise) {
@@ -206,6 +214,11 @@ export class Coverage {
                     bufferPromiseMap[p.cid].observedTwice = true
                 }
             }
+            channel?.appendLine(`PASS2: buffer - ${JSON.stringify(Object.keys(bufferPromiseMap))}`)
+            channel?.appendLine(`PASS2: ---`)            
+            channel?.appendLine(`PASS2: promiseMap - ${JSON.stringify(promiseMap)}`)
+            channel?.appendLine(`PASS2: ---`)
+            channel?.appendLine(`PASS2: cidToIdMap - ${JSON.stringify(cidToIdMap)}`)
             // console.log('buffer: ', bufferPromiseMap)
             // console.log('promiseMap: ', promiseMap)
             // console.log('---')
@@ -213,7 +226,9 @@ export class Coverage {
         }, 0)
 
         Object.values(bufferPromiseMap).filter((o: any) => !o.observedTwice).forEach((o: any) => {
+            
             let p = o.p
+            channel?.appendLine(`PASS2: observedOnce ${JSON.stringify(p)}`)
             const id = [p.iid, p.iid].join(':')
             promiseMap[id] = Object.assign({}, p)
             promiseMap[id].location2 = p.location

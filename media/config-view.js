@@ -5,6 +5,7 @@
 (function () {
     // @ts-ignore
     const vscode = acquireVsCodeApi();
+    // const vscode = {getState: () => true};
 
     const oldState = vscode.getState() || { colors: [] };
 
@@ -18,6 +19,39 @@
     document.querySelector('#search').addEventListener('input', _updateSearchQuery)
     document.querySelector('#search').addEventListener('propertychange', _updateSearchQuery)
 
+
+    document.querySelectorAll("input[name='coverageType']").forEach(item => {
+        item.addEventListener('change', function(e) {
+            // @ts-ignore
+            vscode.postMessage({ type: 'updateCoverageType', value: e.target.value });
+        })
+    })
+
+    document.querySelectorAll("input[name='promiseType']").forEach(item => {
+        item.addEventListener('change', function(e) {
+            let allChecked = [...document.querySelectorAll("input[name='promiseType']:checked")].map(e => e.id)
+            vscode.postMessage({ type: 'updatePromiseTypes', value: allChecked });
+        })
+    })
+    
+
+    
+
+    // For show/hide...
+    document.querySelector("#all").addEventListener('change', (e) => {
+        // @ts-ignore
+        if(!e.target.checked) {
+            document.querySelectorAll(".promise-type-other").forEach(item => {
+                item.className = "promise-type-other"
+            })
+        } else {
+            document.querySelectorAll(".promise-type-other").forEach(item => {
+                item.className = "promise-type-other hidden"
+            })
+        }
+    })
+    
+    
     // Handle messages sent from the extension to the webview
     window.addEventListener('message', event => {
         const message = event.data; // The json data that the extension sent

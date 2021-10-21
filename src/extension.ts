@@ -25,22 +25,13 @@ export function activate(context: vscode.ExtensionContext) {
   let workspaceDir: vscode.Uri;
   
   // PROMISE TREE PROVIDER 
-  const promiseTreeProvider = PromiseTreeProvider.getInstance(_channel)
+  const promiseTreeProvider = PromiseTreeProvider.getInstance(context.extensionUri, _channel)
   context.subscriptions.push(vscode.window.registerTreeDataProvider(IDS.PROMISE_TREE_VIEW, promiseTreeProvider));
   
   
   // CONFIG WEBVIEW PROVIDER
   const configWebviewProvider = new ConfigWebviewProvider(context.extensionUri, _channel);
   context.subscriptions.push(vscode.window.registerWebviewViewProvider(IDS.PROMISE_TREE_CONFIG_WEBVIEW, configWebviewProvider));
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand(IDS.CONFIG__UPDATE_CONFIG, () => {
-	// 		configWebviewProvider.updateConfig();
-	// 	}));
-
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand('calicoColors.clearColors', () => {
-	// 		configWebviewProvider.clearColors();
-	// 	}));
 
   
   // RUN PROMISE COVERAGE COMMAND
