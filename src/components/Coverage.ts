@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
-import { P_TYPES, LOG_TAGS } from './constants'
+import { P_TYPES, LOG_TAGS, CoverageGroupByEnum } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
+import { objectFilter } from './utils'
 
 
 export class Coverage {
@@ -14,21 +15,28 @@ export class Coverage {
         this._logs = []
     }
 
+    clear() {
+        this._logs = [];
+        this._promiseMap = {}
+    }
+
     private async _getLogs() {
-        if(!this._logs.length) this._logs = await LogParser.parseJsonLogs(this._logUri)
+        if (!this._logs.length) this._logs = await LogParser.parseJsonLogs(this._logUri)
     }
 
     // measures coverage% based on the semantics of promises and the merged promise map.
-    async measureCoverage() {
+    // TODO: make all three return in the same format(list of CovObjects)
+    async getCoverageReports(groupBy?: CoverageGroupByEnum): Promise<any[]> {
         await this.getPromiseMap()
-        let mergedPromiseMap = this._mergePromisesBasedOnIid()
-        let functionsMap = await this.getFunctionsMap()
-        
-        // TODO: handle semantics as well.
-        let reactionsExecuted = Object.keys(mergedPromiseMap).map(k => +!!mergedPromiseMap[k]['execute'].fulfill.length + +!!mergedPromiseMap[k]['execute'].reject.length).reduce((s, curr) => s + curr, 0)
-        let coverage = reactionsExecuted / (2 * Object.keys(mergedPromiseMap).length)
-        // console.log(`coverage = ${coverage * 100}%`)
-        return coverage
+        if (groupBy === CoverageGroupByEnum.file) {
+            return this._getCoverageReportByFile();
+        }
+        else if (groupBy === CoverageGroupByEnum.promiseType) {
+            return this._getCoverageReportByType()
+        }
+        else { // !groupBy
+            return this._getTotalCoverageReport();
+        }
     }
 
     // returns the functions map based on the logs in filepath.
@@ -36,9 +44,9 @@ export class Coverage {
         await this._getLogs()
         let functionsMap: any = {}
         this._logs.forEach(log => {
-        if(log.tag === LOG_TAGS.INVOKE_FUN) {
-            functionsMap[log.fid] = {location: log.location, iid: log.iid}
-        }
+            if (log.tag === LOG_TAGS.INVOKE_FUN) {
+                functionsMap[log.fid] = { location: log.location, iid: log.iid }
+            }
         })
         return functionsMap
     }
@@ -86,15 +94,25 @@ export class Coverage {
     }
 
     // returns a promise map based on the logs in filepath
-    async getPromiseMap() {
-        if(!!this._promiseMap) return this._promiseMap
-        await this._getLogs()
-        let promiseList: any[] = []
-        promiseList = await this._pass1_addPromises(this._logs, promiseList)
-        let { promiseMap, cidToIdMap } = await this._pass2_mergePromisesBasedOnIid(promiseList)
-        promiseMap = await this._pass3_addReactions(this._logs, promiseMap, cidToIdMap)
-        promiseMap = await this._pass4_handleTryCatchBlocks(this._logs, promiseMap)
-        this._promiseMap = promiseMap
+    async getPromiseMap(config?: any, query?: string) {
+        let promiseMap = {}
+        if (!!this._promiseMap) {
+            promiseMap = this._promiseMap
+        }
+        else {
+            await this._getLogs()
+            let promiseList: any[] = []
+            promiseList = await this._pass1_addPromises(this._logs, promiseList)
+            let res = await this._pass2_mergePromisesBasedOnIid(promiseList)
+            promiseMap = res.promiseMap
+            promiseMap = await this._pass3_addReactions(this._logs, promiseMap, res.cidToIdMap)
+            promiseMap = await this._pass4_handleTryCatchBlocks(this._logs, promiseMap)
+            this._promiseMap = promiseMap
+        }
+        
+        if(!!query) {
+            promiseMap = objectFilter(promiseMap, (val: any) => val['code'].includes(query))
+        }
         return promiseMap
     }
 
@@ -108,7 +126,7 @@ export class Coverage {
     private async _pass1_addPromises(logs: any[], promiseList: any[]) {
         logs.reduce((counter, log) => {
             if (log.tag === LOG_TAGS.NEW_PROMISE) {
-                if(log.location.startsWith('*file://')) {
+                if (log.location.startsWith('*file://')) {
                     log.location = log.location.replace('*file://', '')
                 }
                 promiseList.push({
@@ -128,6 +146,7 @@ export class Coverage {
                     type: log.ftype,
                     iid: log.iid,
                     cid: log.cid,
+                    code: log.code,
                     location: log.location,
                     code: log.code,
                     time: counter,
@@ -263,4 +282,161 @@ export class Coverage {
         return promiseMap
     }
 
+
+    private _getCoverageReportByFile() {
+        const fileMap: any = {}
+        Object.entries(this._promiseMap).forEach((p: any) => {
+            const id = p[0]
+            const val = p[1]
+            const loc = process.argv.length > 2 ? val['location2'] : val['location2'].split('benchmark_projects')[1]
+            const filename = loc.split(':')[0]
+            if (!fileMap[filename]) {
+                fileMap[filename] = {
+                    pCnt: 0,
+                    setResCnt: 0,
+                    setRejCnt: 0,
+                    setResTot: 0,
+                    setRejTot: 0,
+
+                    regResCnt: 0,
+                    regRejCnt: 0,
+                    regResTot: 0,
+                    regRejTot: 0,
+
+                    execResCnt: 0,
+                    execRejCnt: 0,
+                    execResTot: 0,
+                    execRejTot: 0,
+                }
+            }
+
+            fileMap[filename].pCnt++;
+            // console.log('---')
+            // console.log(val)
+            fileMap[filename].setResCnt += +(![P_TYPES.PromiseReject].includes(val.type) && !!val['settle']['fulfill'].length)
+            fileMap[filename].setRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(val.type) && !!val['settle']['reject'].length)
+            fileMap[filename].setResTot += +(![P_TYPES.PromiseReject].includes(val.type))
+            fileMap[filename].setRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(val.type))
+
+            fileMap[filename].regResCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type) && !!val['register']['fulfill'].length)
+            fileMap[filename].regRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type) && !!val['register']['reject'].length)
+            fileMap[filename].regResTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type))
+            fileMap[filename].regRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type))
+
+            fileMap[filename].execResCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type) && !!val['execute']['fulfill'].length)
+            fileMap[filename].execRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type) && !!val['execute']['reject'].length)
+            fileMap[filename].execResTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type))
+            fileMap[filename].execRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type))
+        })
+        return Object.entries(fileMap).map((f: any) => {
+            const filename = f[0]
+            const val = f[1]
+            const obj = {
+                'filename': filename,
+                'promise-count': val.pCnt,
+                'settlement-coverage': (100.0 * (val.setResCnt + val.setRejCnt) / (val.setResTot + val.setRejTot)).toFixed(2),
+                'registration-coverage': (100.0 * (val.regResCnt + val.regRejCnt) / (val.regResTot + val.regRejTot)).toFixed(2),
+                'execution-coverage': (100.0 * (val.execResCnt + val.execRejCnt) / (val.execResTot + val.execRejTot)).toFixed(2),
+                'statement-coverage': '',
+                'branch-coverage': '',
+                'function-coverage': '',
+            }
+            // console.log(obj)
+            return obj
+        })
+    }
+
+    private _getCoverageReportByType() {
+        const fileMap: any = {}
+        Object.entries(this._promiseMap).forEach((p: any) => {
+            const id = p[0]
+            const val = p[1]
+            const loc = process.argv.length > 2 ? val['location2'] : val['location2'].split('benchmark_projects')[1]
+            const filename = loc.split(':')[0]
+
+            if (!fileMap[filename]) {
+                const ptypesZero = Object.entries(P_TYPES).map(t => {
+                    const key = `${t[1]}Cnt`
+                    return [key, 0]
+                })
+
+                fileMap[filename] = {
+                    pCnt: 0,
+                    ...Object.fromEntries(ptypesZero),
+                }
+            }
+
+            fileMap[filename].pCnt++;
+            const typeKey = `${val.type}Cnt`
+            fileMap[filename][typeKey] += 1
+
+        })
+        // console.log(fileMap)
+
+        return Object.entries(fileMap).map((f: any) => {
+            const filename = f[0]
+            const val = f[1]
+            console.log(f)
+            const pTypesCounts = Object.entries(P_TYPES).map(t => {
+                const k = `${t[1]}Cnt`
+                return [t[1], val[k]]
+            })
+            return {
+                'filename': filename,
+                ...Object.fromEntries(pTypesCounts),
+                'total-count': val.pCnt,
+            }
+        })
+    }
+
+    private _getTotalCoverageReport() {
+        const coverageObj = {
+            pCnt: 0,
+            setResCnt: 0,
+            setRejCnt: 0,
+            setResTot: 0,
+            setRejTot: 0,
+
+            regResCnt: 0,
+            regRejCnt: 0,
+            regResTot: 0,
+            regRejTot: 0,
+
+            execResCnt: 0,
+            execRejCnt: 0,
+            execResTot: 0,
+            execRejTot: 0,
+        }
+        Object.entries(this._promiseMap).forEach((p: any) => {
+            const id = p[0]
+            const val = p[1]
+            // const loc = process.argv.length > 2 ? val['location2'] : val['location2'].split('benchmark_projects')[1]
+
+            coverageObj.pCnt++;
+
+            coverageObj.setResCnt += +(![P_TYPES.PromiseReject].includes(val.type) && !!val['settle']['fulfill'].length)
+            coverageObj.setRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(val.type) && !!val['settle']['reject'].length)
+            coverageObj.setResTot += +(![P_TYPES.PromiseReject].includes(val.type))
+            coverageObj.setRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(val.type))
+
+            coverageObj.regResCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type) && !!val['register']['fulfill'].length)
+            coverageObj.regRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type) && !!val['register']['reject'].length)
+            coverageObj.regResTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type))
+            coverageObj.regRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type))
+
+            coverageObj.execResCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type) && !!val['execute']['fulfill'].length)
+            coverageObj.execRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type) && !!val['execute']['reject'].length)
+            coverageObj.execResTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type))
+            coverageObj.execRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type))
+        })
+        return [{
+            'promise-count': coverageObj.pCnt,
+            'settlement-coverage': (100.0 * (coverageObj.setResCnt + coverageObj.setRejCnt) / (coverageObj.setResTot + coverageObj.setRejTot)).toFixed(2),
+            'registration-coverage': (100.0 * (coverageObj.regResCnt + coverageObj.regRejCnt) / (coverageObj.regResTot + coverageObj.regRejTot)).toFixed(2),
+            'execution-coverage': (100.0 * (coverageObj.execResCnt + coverageObj.execRejCnt) / (coverageObj.execResTot + coverageObj.execRejTot)).toFixed(2),
+            'statement-coverage': '',
+            'branch-coverage': '',
+            'function-coverage': '',
+        }]
+    }
 }

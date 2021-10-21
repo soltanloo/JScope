@@ -9,45 +9,91 @@
 	"activationEvents": [
 		"onCommand:cap.refresh",
 		"onCommand:cap.run-coverage",
-		"onView:cap_tree_view"
+		"onView:cap-view-container",
+		"onView:cap-tree-view",
+		"onView:cap-config-webview",
+		"onCommand:calicoColors.addColor",
+		"onCommand:calicoColors.clearColors"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "cap-view-container",
+                    "title": "CAP",
+                    "icon": "media/area.png"
+                }
+            ]
+        },
 		"commands": [
-			{
-				"command": "cap.refresh",
-				"title": "CAP: Refresh Tree"
-			},
 			{
 				"command": "cap.run-coverage",
 				"title": "CAP: Run Promise Coverage"
+			},
+			{
+				"command": "cap-config.update-config",
+				"category": "CAP: Update Config",
+				"title": "Update Promise Coverage Configurations",
+				"icon": "$(clear-all)"
 			}
 		],
 		"views": {
-			"explorer": [
+			"cap-view-container": [
 				{
-					"id": "cap_tree_view",
+					"id": "cap-config-webview",
+					"type": "webview",
+					"name": "Configure Promise Tree"
+				},
+				{
+					"id": "cap-tree-view",
 					"name": "Promise Coverage view"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "calicoColors.clearColors",
+					"group": "navigation",
+					"when": "view == calicoColors.colorsView"
 				}
 			]
 		}
 	},
 	"scripts": {
-		"build": "npm run build:main && npm run build:pull-submodules && npm run build:build-submodules",
+		"build": "npm run compile && npm run build:main && npm run build:pull-submodules && npm run build:build-submodules",
 		"build:main": "npm i",
 		"build:pull-submodules": "git submodule update --init",
 		"build:build-submodules": "cd async-coverage && yarn install && cd ..",
+		
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"lint": "eslint . --ext .ts,.tsx",
-		"watch": "tsc -watch -p ./"
+		"watch": "tsc -watch -p ./",
+		
+		"test:integration": "node ./out/test/runTests.js integration",
+		"test:unit": "node ./out/test/runTests.js unit",
+		"test": "npm run test:unit && npm run test:integration",
+		"build-n-test": "npm run build && npm run test",
+
+		"clean:test": "rm -r out/test",
+		"clean": "rm -r ./out"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.32.0",
+		"@types/glob": "^7.1.4",
+		"@types/mocha": "^9.0.0",
 		"@types/node": "^12.12.0",
+		"@types/vscode": "^1.32.0",
 		"@typescript-eslint/eslint-plugin": "^4.16.0",
 		"@typescript-eslint/parser": "^4.16.0",
 		"eslint": "^7.21.0",
+		"mocha": "^9.1.2",
 		"typescript": "^4.2.2"
+	},
+	"dependencies": {
+		"@vscode/test-electron": "^1.6.2",
+		"glob": "^7.2.0",
+		"vscode-test": "^1.6.1"
 	}
 }
