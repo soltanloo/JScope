@@ -4,17 +4,19 @@ import { sh } from "./sh";
 import { ANALYSIS_PATHS, TestFrameworkEnum } from "./constants";
 import { WorkspacePicker } from "./WorkspacePicker";
 import { PromiseTreeProvider } from "./PromiseTreeProvider";
+import Logger from "./Logger";
 
+/**
+ * Runs the dynamic analysis and creates a log file as output.
+ */
 export class Analyzer {
     private static instance: Analyzer | undefined;
     
     workspace: vscode.WorkspaceFolder | undefined;
     _nodeprofPath: string;
     _extensionPath: string;
-    _channel: vscode.OutputChannel;
 
     private constructor() {
-        this._channel = vscode.window.createOutputChannel("CAP");
         this._extensionPath = '';
         this._nodeprofPath = '';
     }
@@ -31,9 +33,8 @@ export class Analyzer {
         return Analyzer.instance;
     }
 
-    init(context: vscode.ExtensionContext, _channel: vscode.OutputChannel, nodeprofPath: string) {
+    init(context: vscode.ExtensionContext, nodeprofPath: string) {
         this._extensionPath = context.extensionPath;
-        this._channel = _channel;
         this._nodeprofPath = nodeprofPath;
     }
 
@@ -49,7 +50,7 @@ export class Analyzer {
         if(!this.workspace) {
             if(vscode.workspace.workspaceFolders === undefined) {
                 const message = "> No open workspace found, open a folder an try again" ;
-                this._channel.appendLine(message)
+                Logger.log(message)
                 vscode.window.showErrorMessage(message);
                 return
             }
@@ -60,7 +61,7 @@ export class Analyzer {
 
         const nameOfLogFile = `${this.workspace.name}.log`
         const outputLogUri = Uri.file(`${ANALYSIS_PATHS.TMP_LOG_DIR}/${nameOfLogFile}`)
-        this._channel.appendLine(`> Running analysis on ${this.workspace.name}`) 
+        Logger.log(`> Running analysis on ${this.workspace.name}`) 
 
         await Analyzer.createLogDirIfNotExist(ANALYSIS_PATHS.TMP_LOG_DIR)
 
@@ -78,19 +79,19 @@ export class Analyzer {
         
         
         // vscode.window.showInformationMessage(`cmd: ${cmd}`);
-        this._channel.appendLine(`> cmd: ${cmd}`) 
+        Logger.log(`> cmd: ${cmd}`) 
         // const {stdout, stderr} = await sh(cmd)
-        // this._channel.appendLine(`> stdout: ${stdout}`) 
-        // this._channel.appendLine(`> stderr: ${stderr}`) 
-        this._channel.appendLine(`> Finished running analysis for ${this.workspace.name}`) 
-        this._channel.appendLine(`> output URI: ${outputLogUri.path}`)
+        // Logger.log(`> stdout: ${stdout}`) 
+        // Logger.log(`> stderr: ${stderr}`) 
+        Logger.log(`> Finished running analysis for ${this.workspace.name}`) 
+        Logger.log(`> output URI: ${outputLogUri.path}`)
         
-        PromiseTreeProvider.getInstance(vscode.Uri.file(this._extensionPath), this._channel).refresh(outputLogUri)
+        PromiseTreeProvider.getInstance(vscode.Uri.file(this._extensionPath)).refresh(outputLogUri)
     }
 
     async updateSelectedWorkspace(newWorkspace: vscode.WorkspaceFolder) {
         this.workspace = newWorkspace;
-        this._channel.appendLine(`> selectedWorkspace: ${newWorkspace.name}`)
+        Logger.log(`> selectedWorkspace: ${newWorkspace.name}`)
         await this.runAnalysis();
     }
 

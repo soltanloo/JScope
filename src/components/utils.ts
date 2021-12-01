@@ -45,7 +45,15 @@ export function objectFilter(obj: any, predicate: Function){
 } 
     
 export function trimLabel(label: string): string {
-    return label && label.length > 20 ? label.substr(0, 17) + '...' : label
+    return label && label.length > 50 ? label.substr(0, 47) + '...' : label
+}
+
+export function createLabel(pInfo: any): string {
+    let loc = pInfo.location.replace(/\)|\(/g, '').split(':')
+    let [filepath, startLine, startCol, endLine, endCol] = loc
+    const filepathSplitted = filepath.split('/')
+    const filename = filepathSplitted[filepathSplitted.length-1]
+    return `${filename}:${startLine}:${endLine}`
 }
 
 export function getIconPath(extensionPath: string, icon: string): vscode.Uri {

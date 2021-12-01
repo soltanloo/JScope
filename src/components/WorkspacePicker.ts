@@ -5,6 +5,10 @@ import { FileType, Uri, QuickPickItem, QuickPick, } from "vscode";
 import { Analyzer } from "./Analyzer";
 
 
+/**
+ * Provides a picker, appearing on top of the screen.
+ * Asks the user to pick a workspace among opened workspaces for running coverage analysis.
+ */
 export class WorkspaceFolderItem implements QuickPickItem {
   label: string;
   workspaceFolder: vscode.WorkspaceFolder;

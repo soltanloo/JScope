@@ -7,6 +7,13 @@ export enum TestFrameworkEnum {
     tap = 'tap'
 }
 
+export const COMMAND_IDS = {
+    RUN_COVERAGE: 'cap.run-coverage',
+    PROMISE_TREE_VIEW: 'cap-tree-view',
+    PROMISE_TREE_CONFIG_WEBVIEW: 'cap-config-webview',
+    CONFIG__UPDATE_CONFIG: 'cap-config.update-config',
+  };
+
 export const ANALYSIS_PATHS = {
     ANALYSIS:  'async-coverage/src/analysis.js',
     RUN_FMWK_CMD:  'async-coverage/run_test_framework.sh',
@@ -35,7 +42,7 @@ export const LOG_TAGS = {
     SETTLEMENT: 'settle',
     REGISTER: 'register',
     EXECUTE: 'execute',
-    INVOKE_FUN: 'invoke-fun',
+    INVOKE_FUN: 'function-invoke',
     TRY_CATCH: 'try-catch',
     AWAIT: 'await',
   }
@@ -43,4 +50,10 @@ export const LOG_TAGS = {
 export enum CoverageGroupByEnum {
     file= 'file',
     promiseType = 'promiseType',
+}
+
+export const DESCRIPTION_MAP = {
+    'settle': {resolve: 'resolved', reject: 'rejected'},
+    'register': {resolve: 'resolve registered', reject: 'reject registered'},
+    'execute': {resolve: 'resolve executed', reject: 'reject executed'},
 }

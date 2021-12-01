@@ -6,6 +6,9 @@ export enum TreeItemType {
     promise
 };
   
+/**
+ * A general interface for a treeItem, to keep all tree nodes consistent.
+ */
 export class TreeItem extends vscode.TreeItem {
     children: TreeItem[]|undefined;
     type: TreeItemType;

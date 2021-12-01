@@ -2,6 +2,9 @@ import {Uri} from 'vscode'
 import * as fs from 'fs'
 import * as readline from 'readline'
 
+/**
+ * Parses the logs outputs from dynamic analysis and returns array of JS objects.
+ */
 export default class LogParser {
   
   static async parseJsonLogs(uri: Uri): Promise<any[]> {

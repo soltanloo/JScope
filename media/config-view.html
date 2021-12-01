@@ -47,12 +47,14 @@
     <label for="PromiseThen">Promise.then</label></div>
     <div class="promise-type-other hidden"><input type="checkbox" id="PromiseCatch" name="promiseType" value="PromiseCatch">
     <label for="PromiseCatch">Promise.catch</label></div>
-    <div class="promise-type-other hidden"><input type="checkbox" id="PromiseResolve" name="promiseType" value="PromiseResolve">
-    <label for="PromiseResolve">Promise.resolve</label></div>
-    <div class="promise-type-other hidden"><input type="checkbox" id="PromiseReject" name="promiseType" value="PromiseReject">
-    <label for="PromiseReject">Promise.reject</label></div>
-    <div class="promise-type-other hidden"><input type="checkbox" id="PromiseRace" name="promiseType" value="PromiseRace">
-    <label for="PromiseRace">Promise.race/all</label></div>    
+    <div class="promise-type-other hidden"><input type="checkbox" id="PromiseResolve" name="promiseType" value="PromiseResolve,PromiseReject">
+    <label for="PromiseResolve">Promise.resolve/reject</label></div>
+    <div class="promise-type-other hidden"><input type="checkbox" id="PromiseAll" name="promiseType" value="PromiseAll,PromiseRace">
+    <label for="PromiseAll">Promise.race/all</label></div>
+    <div class="promise-type-other hidden"><input type="checkbox" id="AsyncFunction" name="promiseType" value="AsyncFunction">
+    <label for="AsyncFunction">Async Function</label></div>    
+    <div class="promise-type-other hidden"><input type="checkbox" id="Await" name="promiseType" value="Await">
+    <label for="Await">Await Statement</label></div>    
     <hr>
     
     <button class="clear-tree">Clear Tree</button>

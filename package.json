@@ -11,9 +11,7 @@
 		"onCommand:cap.run-coverage",
 		"onView:cap-view-container",
 		"onView:cap-tree-view",
-		"onView:cap-config-webview",
-		"onCommand:calicoColors.addColor",
-		"onCommand:calicoColors.clearColors"
+		"onView:cap-config-webview"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -48,15 +46,6 @@
 				{
 					"id": "cap-tree-view",
 					"name": "Promise Coverage view"
-				}
-			]
-		},
-		"menus": {
-			"view/title": [
-				{
-					"command": "calicoColors.clearColors",
-					"group": "navigation",
-					"when": "view == calicoColors.colorsView"
 				}
 			]
 		}

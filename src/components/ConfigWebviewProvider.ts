@@ -1,13 +1,18 @@
 import * as vscode from 'vscode'
+import { COMMAND_IDS } from './constants';
+import Logger from './Logger';
 import { PromiseTreeProvider } from './PromiseTreeProvider';
 
+/**
+ * Creates the webview for coverage panel, appearing on top of the sidebar.
+ * Contains form and buttons for configuring coverage.
+ */
 export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 
 	private _view?: vscode.WebviewView;
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
-		private readonly _channel: vscode.OutputChannel,
 	) { }
 
 	public resolveWebviewView(
@@ -29,24 +34,28 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 		webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
 		webviewView.webview.onDidReceiveMessage(data => {
-			this._channel.appendLine('some message Received')
-			this._channel.appendLine(JSON.stringify(data))
+			Logger.log('some message Received')
+			Logger.log(JSON.stringify(data))
 			// Called through vscode.postMessage({ type: 'colorSelected', value: color }); in the JS files when run in extension.
 			switch (data.type) {
 				case 'updateSearchQuery': {
-					PromiseTreeProvider.getInstance(this._extensionUri, this._channel).updateConfig({query: data.value})
+					PromiseTreeProvider.getInstance(this._extensionUri).updateConfig({query: data.value})
 					break;
 				}
 				case 'updateCoverageType': {
-					PromiseTreeProvider.getInstance(this._extensionUri, this._channel).updateConfig({coverageType: data.value})
+					PromiseTreeProvider.getInstance(this._extensionUri).updateConfig({coverageType: data.value})
 					break;
 				}
 				case 'updatePromiseTypes': {
-					PromiseTreeProvider.getInstance(this._extensionUri, this._channel).updateConfig({promiseTypes: data.value})
+					PromiseTreeProvider.getInstance(this._extensionUri).updateConfig({promiseTypes: data.value})
 					break;
 				}
 				case 'clearTree': {
-					PromiseTreeProvider.getInstance(this._extensionUri, this._channel).empty();
+					PromiseTreeProvider.getInstance(this._extensionUri).empty();
+					break;
+				}
+				case 'startAnalysis': {
+					vscode.commands.executeCommand(COMMAND_IDS.RUN_COVERAGE);
 					break;
 				}
 			}
@@ -123,14 +132,17 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 			<label for="PromiseThen">Promise.then</label></div>
 			<div class="promise-type-other hidden"><input type="checkbox" id="PromiseCatch" name="promiseType" value="PromiseCatch">
 			<label for="PromiseCatch">Promise.catch</label></div>
-			<div class="promise-type-other hidden"><input type="checkbox" id="PromiseResolve" name="promiseType" value="PromiseResolve">
-			<label for="PromiseResolve">Promise.resolve</label></div>
-			<div class="promise-type-other hidden"><input type="checkbox" id="PromiseReject" name="promiseType" value="PromiseReject">
-			<label for="PromiseReject">Promise.reject</label></div>
-			<div class="promise-type-other hidden"><input type="checkbox" id="PromiseRace" name="promiseType" value="PromiseRace">
-			<label for="PromiseRace">Promise.race/all</label></div>    
+			<div class="promise-type-other hidden"><input type="checkbox" id="PromiseResolve" name="promiseType" value="PromiseResolve,PromiseReject">
+			<label for="PromiseResolve">Promise.resolve/reject</label></div>
+			<div class="promise-type-other hidden"><input type="checkbox" id="PromiseAll" name="promiseType" value="PromiseAll,PromiseRace">
+			<label for="PromiseAll">Promise.race/all</label></div>
+			<div class="promise-type-other hidden"><input type="checkbox" id="AsyncFunction" name="promiseType" value="AsyncFunction">
+			<label for="AsyncFunction">Async Function</label></div>    
+			<div class="promise-type-other hidden"><input type="checkbox" id="Await" name="promiseType" value="Await">
+			<label for="Await">Await Statement</label></div>    
 			<hr>
 			
+			<button class="start">New Coverage</button>
 			<button class="clear-tree">Clear Tree</button>
 		
 			<script nonce="${nonce}" src="${scriptUri}"></script>

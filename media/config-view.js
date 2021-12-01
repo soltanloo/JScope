@@ -10,7 +10,11 @@
     const oldState = vscode.getState() || { colors: [] };
 
     document.querySelector('.clear-tree').addEventListener('click', () => {
-        vscode.postMessage({ type: 'clearTree', value: {some: 'obj', with: ['fields']} });
+        vscode.postMessage({ type: 'clearTree', value: {} });
+    });
+
+    document.querySelector('.start').addEventListener('click', () => {
+        vscode.postMessage({ type: 'startAnalysis', value: {} });
     });
 
     function _updateSearchQuery() {
@@ -29,7 +33,8 @@
 
     document.querySelectorAll("input[name='promiseType']").forEach(item => {
         item.addEventListener('change', function(e) {
-            let allChecked = [...document.querySelectorAll("input[name='promiseType']:checked")].map(e => e.id)
+            // @ts-ignore
+            let allChecked = [...document.querySelectorAll("input[name='promiseType']:checked")].map(e => e.value.split(',')).flat()
             vscode.postMessage({ type: 'updatePromiseTypes', value: allChecked });
         })
     })

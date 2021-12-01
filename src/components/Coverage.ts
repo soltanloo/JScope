@@ -4,11 +4,16 @@ import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
 import { objectFilter } from './utils'
 
-
+/**
+ * - Keeps Promise map and functions map and other information
+ *   about coverage for a specific workspace.
+ * - Generates coverage reports.
+ */
 export class Coverage {
     private _logUri: vscode.Uri
     private _logs: any[]
     private _promiseMap: any
+    private _functionsMap: any
 
     constructor(logUri?: vscode.Uri) {
         this._logUri = logUri || vscode.Uri.file('')
@@ -18,6 +23,7 @@ export class Coverage {
     clear() {
         this._logs = [];
         this._promiseMap = {}
+        this._functionsMap = {}
     }
 
     private async _getLogs() {
@@ -28,6 +34,7 @@ export class Coverage {
     // TODO: make all three return in the same format(list of CovObjects)
     async getCoverageReports(groupBy?: CoverageGroupByEnum): Promise<any[]> {
         await this.getPromiseMap()
+        await this.getFunctionsMap()
         if (groupBy === CoverageGroupByEnum.file) {
             return this._getCoverageReportByFile();
         }
@@ -41,13 +48,23 @@ export class Coverage {
 
     // returns the functions map based on the logs in filepath.
     async getFunctionsMap(): Promise<any> {
-        await this._getLogs()
         let functionsMap: any = {}
-        this._logs.forEach(log => {
-            if (log.tag === LOG_TAGS.INVOKE_FUN) {
-                functionsMap[log.fid] = { location: log.location, iid: log.iid }
-            }
-        })
+        if (!!this._functionsMap) {
+            functionsMap = this._functionsMap
+        }
+        else {
+            await this._getLogs()
+            this._logs.forEach(log => {
+                if (log.tag === LOG_TAGS.INVOKE_FUN) {
+                    functionsMap[log.fid] = { 
+                        iid: log.iid, 
+                        location: log.location, 
+                        code: log.code 
+                    }
+                }
+            })
+        }
+        
         return functionsMap
     }
 
@@ -95,8 +112,7 @@ export class Coverage {
 
     // returns a promise map based on the logs in filepath
     async getPromiseMap(
-        config?: {query?: string, promiseTypes: string[], coverageType: string}, 
-        channel?: vscode.OutputChannel
+        config?: {query?: string, promiseTypes: string[], coverageType: string}
     ) {
         let promiseMap = {}
         if (!!this._promiseMap) {
@@ -105,8 +121,9 @@ export class Coverage {
         else {
             await this._getLogs()
             let promiseList: any[] = []
+            this._logs = this._pass0_cleanupLogs(this._logs)
             promiseList = await this._pass1_addPromises(this._logs, promiseList)
-            let res = await this._pass2_mergePromisesBasedOnIid(promiseList, channel)
+            let res = await this._pass2_mergePromisesBasedOnIid(promiseList)
             promiseMap = res.promiseMap
             promiseMap = await this._pass3_addReactions(this._logs, promiseMap, res.cidToIdMap)
             promiseMap = await this._pass4_handleTryCatchBlocks(this._logs, promiseMap)
@@ -122,6 +139,15 @@ export class Coverage {
         return promiseMap
     }
 
+    private _pass0_cleanupLogs(_logs: any[]): any[] {
+        return _logs.map((log) => {
+            if (log.location) {
+                log.location = log.location.replace(/\)|\(/g, '').replace('*file://', '')
+            }
+            return log
+        })
+    }
+
     /**
      * 
      * @param {*} logs 
@@ -132,9 +158,6 @@ export class Coverage {
     private async _pass1_addPromises(logs: any[], promiseList: any[]) {
         logs.reduce((counter, log) => {
             if (log.tag === LOG_TAGS.NEW_PROMISE) {
-                if (log.location.startsWith('*file://')) {
-                    log.location = log.location.replace('*file://', '')
-                }
                 promiseList.push({
                     parent: log.base && log.base.__cid ? log.base.__cid : null,
                     settle: {
@@ -182,7 +205,7 @@ export class Coverage {
      * returns a map of promises based on an id + a mapping from cid to pairId
      * id is pair of <definitionIid, firstCallSiteIid> second one can be null, replaced by _
      */
-    private async _pass2_mergePromisesBasedOnIid(promiseList: any[], channel?: vscode.OutputChannel) {
+    private async _pass2_mergePromisesBasedOnIid(promiseList: any[]) {
         // TODO: FIX BUGS.
         // key: cid, 
         // val: Obj{p: PromiseInfo, observedTwice: boolean}
@@ -195,8 +218,8 @@ export class Coverage {
 
         // console.log('plist: ', promiseList)
         promiseList.reduce((_, p) => {
-            channel?.appendLine(`PASS2: promise ${JSON.stringify(p)}`)
-            channel?.appendLine(`PASS2: ---`)
+            // Logger.log(`PASS2: promise ${JSON.stringify(p)}`)
+            // Logger.log(`PASS2: ---`)
             // console.log('p', p)
             const definitionPromise = bufferPromiseMap[p.cid]
             if (!definitionPromise) {
@@ -214,11 +237,11 @@ export class Coverage {
                     bufferPromiseMap[p.cid].observedTwice = true
                 }
             }
-            channel?.appendLine(`PASS2: buffer - ${JSON.stringify(Object.keys(bufferPromiseMap))}`)
-            channel?.appendLine(`PASS2: ---`)            
-            channel?.appendLine(`PASS2: promiseMap - ${JSON.stringify(promiseMap)}`)
-            channel?.appendLine(`PASS2: ---`)
-            channel?.appendLine(`PASS2: cidToIdMap - ${JSON.stringify(cidToIdMap)}`)
+            // Logger.log(`PASS2: buffer - ${JSON.stringify(Object.keys(bufferPromiseMap))}`)
+            // Logger.log(`PASS2: ---`)            
+            // Logger.log(`PASS2: promiseMap - ${JSON.stringify(promiseMap)}`)
+            // Logger.log(`PASS2: ---`)
+            // Logger.log(`PASS2: cidToIdMap - ${JSON.stringify(cidToIdMap)}`)
             // console.log('buffer: ', bufferPromiseMap)
             // console.log('promiseMap: ', promiseMap)
             // console.log('---')
@@ -228,7 +251,7 @@ export class Coverage {
         Object.values(bufferPromiseMap).filter((o: any) => !o.observedTwice).forEach((o: any) => {
             
             let p = o.p
-            channel?.appendLine(`PASS2: observedOnce ${JSON.stringify(p)}`)
+            // Logger.log(`PASS2: observedOnce ${JSON.stringify(p)}`)
             const id = [p.iid, p.iid].join(':')
             promiseMap[id] = Object.assign({}, p)
             promiseMap[id].location2 = p.location
@@ -241,26 +264,36 @@ export class Coverage {
     private async _pass3_addReactions(logs: any[], promiseMap: any, cidToIdMap: any) {
         let getId = (cid: string) => { return cidToIdMap[cid] }
         logs.forEach(log => {
-            if ([LOG_TAGS.REGISTER, LOG_TAGS.EXECUTE].includes(log.tag)) {
+            // Used to keep the same structure for all reactions.
+            let logVal = {
+                fid: log.fid, 
+                wrapperFid: log.wrapperFid, 
+                tag: log.tag, 
+                reaction: log.reaction, 
+                value: log.value, 
+                path: `${log.fid}`
+            }
+            
+            if ([LOG_TAGS.REGISTER, LOG_TAGS.EXECUTE].includes(log.tag)) { 
                 if (promiseMap[getId(log.p.__cid)]) {
-                    promiseMap[getId(log.p.__cid)][log.tag][log.reaction].push(log.fid)
+                    promiseMap[getId(log.p.__cid)][log.tag][log.reaction].push(logVal)
                     let curr_cid = log.p.__cid
                     let prefix = ''
                     while (promiseMap[getId(curr_cid)] && promiseMap[getId(curr_cid)].parent) {
                         prefix = `${getId(curr_cid)}>${prefix}`
                         curr_cid = promiseMap[getId(curr_cid)].parent
                         if (promiseMap[getId(curr_cid)]) {
-                            promiseMap[getId(curr_cid)][log.tag][log.reaction].push(`${prefix}${log.fid}`)
+                            promiseMap[getId(curr_cid)][log.tag][log.reaction].push({...logVal, path: `${prefix}${log.fid}`})
                         }
                     }
                 } else {
                     // console.error(`trying to access a non-existing promise with cid=${log.p.__cid}`)
                 }
             }
-            else if ([LOG_TAGS.SETTLEMENT].includes(log.tag)) {
+            else if ([LOG_TAGS.SETTLEMENT].includes(log.tag)) { 
                 let cidToUse = `p${log.cid}`
                 if (promiseMap[getId(cidToUse)]) {
-                    promiseMap[getId(cidToUse)][log.tag][log.reaction].push(log.value)
+                    promiseMap[getId(cidToUse)][log.tag][log.reaction].push(logVal)
                 } else {
                     // console.error(`trying to access a non-existing promise with cid=${log.p.__cid}`)
                 }
