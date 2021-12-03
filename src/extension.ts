@@ -11,6 +11,7 @@ import Logger from './components/Logger';
 
 export function activate(context: vscode.ExtensionContext) {
   const _channel = vscode.window.createOutputChannel("CAP");
+  _channel.show()
   Logger.init(_channel)
   context.subscriptions.push(_channel)
   Logger.log('> Initializing extension...')
