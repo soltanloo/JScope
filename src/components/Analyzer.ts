@@ -1,7 +1,7 @@
 import { Uri } from "vscode";
 import * as vscode from "vscode";
 import { sh } from "./sh";
-import { ANALYSIS_PATHS, TestFrameworkEnum } from "./constants";
+import { ANALYSIS_PATHS, DEPLOY_ENV, TestFrameworkEnum } from "./constants";
 import { WorkspacePicker } from "./WorkspacePicker";
 import { PromiseTreeProvider } from "./PromiseTreeProvider";
 import Logger from "./Logger";
@@ -60,31 +60,41 @@ export class Analyzer {
         }
 
         const nameOfLogFile = `${this.workspace.name}.log`
-        const outputLogUri = Uri.file(`${ANALYSIS_PATHS.TMP_LOG_DIR}/${nameOfLogFile}`)
-        Logger.log(`> Running analysis on ${this.workspace.name}`) 
+        let outputLogUri
+        if(DEPLOY_ENV === 'internal') {
+            const logPath = `${this._extensionPath}/logs/${nameOfLogFile}`
+            Logger.log(`> Deploy env is "internal". Reading logs from ${logPath}`)
+            outputLogUri = Uri.file(logPath)
+        }
+        else if(DEPLOY_ENV === 'production') {
+            outputLogUri = Uri.file(`${ANALYSIS_PATHS.TMP_LOG_DIR}/${nameOfLogFile}`)
+            Logger.log(`> Running analysis on ${this.workspace.name}`) 
 
-        await Analyzer.createLogDirIfNotExist(ANALYSIS_PATHS.TMP_LOG_DIR)
+            await Analyzer.createLogDirIfNotExist(ANALYSIS_PATHS.TMP_LOG_DIR)
 
-        const testFramework = await Analyzer.askForTestFramework();
+            const testFramework = await Analyzer.askForTestFramework();
+            
+            const extensionPath = this._extensionPath
+            const cmd = Analyzer.createCommand( // TODO: use nodeprof_path to generalize
+                `"${extensionPath}/${ANALYSIS_PATHS.RUN_FMWK_CMD}"`,
+                `"${extensionPath}/${ANALYSIS_PATHS.FRAMEWORKS[testFramework]}"`,
+                `"${extensionPath}/${ANALYSIS_PATHS.ANALYSIS}"`,
+                `"${this.workspace.uri.path}/test"`, // TODO: detect directory of tests
+                '>',
+                `"${outputLogUri.path}"`
+            )
+            
+            
+            // vscode.window.showInformationMessage(`cmd: ${cmd}`);
+            Logger.log(`> cmd: ${cmd}`) 
+            const {stdout, stderr} = await sh(cmd)
+            // Logger.log(`> stdout: ${stdout}`) 
+            // Logger.log(`> stderr: ${stderr}`) 
+            Logger.log(`> Finished running analysis for ${this.workspace.name}`) 
+            Logger.log(`> output URI: ${outputLogUri.path}`)
+        }
+
         
-        const extensionPath = this._extensionPath
-        const cmd = Analyzer.createCommand( // TODO: use nodeprof_path to generalize
-            `"${extensionPath}/${ANALYSIS_PATHS.RUN_FMWK_CMD}"`,
-            `"${extensionPath}/${ANALYSIS_PATHS.FRAMEWORKS[testFramework]}"`,
-            `"${extensionPath}/${ANALYSIS_PATHS.ANALYSIS}"`,
-            `"${this.workspace.uri.path}/test"`, // TODO: detect directory of tests
-            '>',
-            `"${outputLogUri.path}"`
-        )
-        
-        
-        // vscode.window.showInformationMessage(`cmd: ${cmd}`);
-        Logger.log(`> cmd: ${cmd}`) 
-        // const {stdout, stderr} = await sh(cmd)
-        // Logger.log(`> stdout: ${stdout}`) 
-        // Logger.log(`> stderr: ${stderr}`) 
-        Logger.log(`> Finished running analysis for ${this.workspace.name}`) 
-        Logger.log(`> output URI: ${outputLogUri.path}`)
         
         PromiseTreeProvider.getInstance(vscode.Uri.file(this._extensionPath)).refresh(outputLogUri)
     }

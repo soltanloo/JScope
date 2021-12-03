@@ -1,3 +1,9 @@
+/**
+ * if internal, will not execute the analysis and read the logs from logs folder.
+ */
+// FIXME: change for production
+export const DEPLOY_ENV: 'production' | 'internal' = 'internal'
+
 export enum STORAGE_KEYS {
     NODEPROF_PATH = 'NODEPROF_PATH',
 }

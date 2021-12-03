@@ -13,7 +13,31 @@ export default class Logger {
 
     private constructor() {}
 
+    /**
+     * Use for debugging purposes only
+     */
     public static log(str: string): void {
+        if(!Logger._channel)
+            throw new Error('Logger not initialized.')
+
+        Logger._channel.appendLine(`DEBUG: ${str}`)
+    }
+
+    /**
+     * 
+     * Use for throwing errors from the extension.
+     */
+     public static error(str: string): void {
+        if(!Logger._channel)
+            throw new Error('Logger not initialized.')
+
+        Logger._channel.appendLine(`-- ERROR: ${str}`)
+    }
+
+    /**
+     * Use for printing report or other information for production.
+     */
+    public static report(str: string) {
         if(!Logger._channel)
             throw new Error('Logger not initialized.')
 

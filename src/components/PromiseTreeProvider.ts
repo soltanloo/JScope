@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { DESCRIPTION_MAP } from './constants';
 import { Coverage } from './Coverage';
 import Logger from './Logger';
-import { TreeItem, TreeItemType } from './TreeItem';
+import { AsyncStmtTreeItem, LocationTreeItem, ReactionTreeItem, TreeItem, TreeItemType } from './TreeItem';
 import { convertLocationToUriAndRange, createLabel, getCoverageLabel, getCoverageStatusForPromise, getIconPath, trimLabel } from './utils';
 
 /**
@@ -80,27 +80,14 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 }
             }
             // Logger.log(`> adding new tree leaf: label: ${label}, location: ${loc}`)
-            let treeItem = new TreeItem({
+            return new AsyncStmtTreeItem({
                 label: label, 
                 location: loc, 
-                children: this.createChildrenForTreeItem(val, functionsMap)
+                children: this.createChildrenForTreeItem(val, functionsMap),
+                promiseInfo: val,
+                iconPath: this._getCoverageIconForPromise(val),
             })
 
-            const {range, uri} = convertLocationToUriAndRange(loc)
-            treeItem.command = {
-                command: "vscode.open",
-                arguments: [uri, {selection: range, preserveFocus: false}],
-                title: ""
-            }
-            treeItem.iconPath = this._getCoverageIconForPromise(val)
-            
-
-            treeItem.description = val['type']
-            let codeDescription = trimLabel(val['code'])
-            treeItem.tooltip = new vscode.MarkdownString(codeDescription);
-            
-            
-            return treeItem;
         })
         Logger.log('> Tree data updated.')
         this._onDidChangeTreeData.fire();
@@ -144,28 +131,21 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     }
 
     private createChildrenForTreeItem(pInfo: any, functionsMap: any): TreeItem[] {
+        // Logger.log(`pInfo: ${JSON.stringify(pInfo)}`)
 
         // Def location
-        // Logger.log(`pInfo: ${JSON.stringify(pInfo)}`)
-        const {range, uri} = convertLocationToUriAndRange(pInfo.location)
-        let defTreeItem = new TreeItem({label: 'definition', location: pInfo.location})
-        defTreeItem.command = {
-            command: "vscode.open",
-            arguments: [uri, {selection: range, preserveFocus: false}],
-            title: ""
-        }
-        // defTreeItem.description = val['type']
+        let defTreeItem = new LocationTreeItem({
+            label: 'Def location', 
+            location: pInfo.location,
+            description: 'Def'
+        })
 
         // first call location
-        const {range: range2, uri: uri2} = convertLocationToUriAndRange(pInfo.location2)
-        let useTreeItem = new TreeItem({label: 'Use location', location: pInfo.location2})
-        useTreeItem.command = {
-            command: "vscode.open",
-            arguments: [uri2, {selection: range2, preserveFocus: false}],
-            title: ""
-        }
-        useTreeItem.iconPath = new vscode.ThemeIcon('debug-step-into', new vscode.ThemeColor('icon.foreground'))
-        useTreeItem.description = 'use'
+        let useTreeItem = new LocationTreeItem({
+            label: 'Use location', 
+            location: pInfo.location2,
+            description: 'Use'
+        })
     
         
         const coverageType = this._getCoverageType()
@@ -183,20 +163,12 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             if(fulfillGroups.has(itemKey)) return null
             fulfillGroups.set(itemKey, true)
             
-            let treeItem = new TreeItem({label: trimLabel(JSON.stringify(item.value)), location: loc})
-            treeItem.iconPath = new vscode.ThemeIcon('add', new vscode.ThemeColor('minimapGutter.addedBackground'))
-            treeItem.description = DESCRIPTION_MAP[coverageType].resolve
-
-            if(!loc) loc = pInfo.location
-
-            if(loc) {
-                const {range, uri} = convertLocationToUriAndRange(loc)
-                treeItem.command = {
-                    command: "vscode.open",
-                    arguments: [uri, {selection: range, preserveFocus: false}],
-                    title: ""
-                }
-            }
+            let treeItem = new ReactionTreeItem({
+                label: trimLabel(JSON.stringify(item.value)), 
+                location: loc,
+                iconPath: new vscode.ThemeIcon('add', new vscode.ThemeColor('minimapGutter.addedBackground')),
+                description: DESCRIPTION_MAP[coverageType].resolve,
+            })
             return treeItem
         }).filter(Boolean)
         // let resolveRoot = new TreeItem({label: 'Resolve reactions', location: '', children: fulfills})
@@ -214,20 +186,12 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             if(rejectGroups.has(itemKey)) return null
             rejectGroups.set(itemKey, true)
             
-            let treeItem = new TreeItem({label: trimLabel(JSON.stringify(item.value)), location: loc})
-            treeItem.iconPath = new vscode.ThemeIcon('remove', new vscode.ThemeColor('minimapGutter.modifiedBackground'))
-            treeItem.description = DESCRIPTION_MAP[coverageType].reject
-            
-            if(!loc) loc = pInfo.location
-
-            if(loc) {
-                const {range, uri} = convertLocationToUriAndRange(loc)
-                treeItem.command = {
-                    command: "vscode.open",
-                    arguments: [uri, {selection: range, preserveFocus: false}],
-                    title: ""
-                }
-            }
+            let treeItem = new ReactionTreeItem({
+                label: trimLabel(JSON.stringify(item.value)), 
+                location: loc,
+                iconPath: new vscode.ThemeIcon('remove', new vscode.ThemeColor('minimapGutter.modifiedBackground')),
+                description: DESCRIPTION_MAP[coverageType].reject,
+            })
 
             return treeItem
         }).filter(Boolean)
@@ -243,7 +207,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     }
 
     private _getReactionFunctionLocation(pInfo: any, coverageType: 'settle' | 'register' | 'execute', reaction: any, functionsMap: any) {
-        Logger.log(`ctype: ${coverageType}, reaction: ${reaction.reaction}, fid: ${reaction.fid}, wrapperFid: ${reaction.wrapperFid}`)
+        // Logger.log(`ctype: ${coverageType}, reaction: ${reaction.reaction}, fid: ${reaction.fid}, wrapperFid: ${reaction.wrapperFid}`)
         if(['register'].includes(coverageType))
             return functionsMap[reaction.wrapperFid]?.location
         return functionsMap[reaction.fid]?.location
