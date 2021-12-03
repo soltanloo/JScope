@@ -27,3 +27,4 @@ box (1) shows open projects in this vscode window, you can add a new folder to w
 
 * `node-fetch`: [github link](https://github.com/node-fetch/node-fetch)
 * `promise-coverage-tests`: [github link](https://github.com/MohGanji/promise-coverage-tests)
+* `fetchr`: [github link](https://github.com/yahoo/fetchr.git) - partial logs
