@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 import { DESCRIPTION_MAP } from './constants';
 import { Coverage } from './Coverage';
+import CoverageReportProvider from './CoverageReportProvider';
 import Logger from './Logger';
 import { AsyncStmtTreeItem, LocationTreeItem, ReactionTreeItem, TreeItem, TreeItemType } from './TreeItem';
-import { convertLocationToUriAndRange, createLabel, getCoverageLabel, getCoverageStatusForPromise, getIconPath, trimLabel } from './utils';
+import { createLabel, getCoverageStatusForPromise, trimLabel } from './utils';
 
 /**
  * - Creates a tree containing data related to Async Items in a project.
@@ -52,11 +53,11 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         Logger.log(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
         const functionsMap = await this.cov.getFunctionsMap()
         Logger.log(`> Function map created. Keys: ${Object.keys(functionsMap).length}`)
-        const coverageReport = await this.cov.getCoverageReports()
-        Logger.log(`> Coverage report created.`)
-        // Logger.log(`---`)
-        // Logger.log(`> Coverage: ${JSON.stringify(coverageReport)}`)
-        // Logger.log(`---`)
+        const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
+        Logger.log(`----------`)
+        Logger.log(`> Coverage report:`)
+        Logger.log(`> ${coverageReport}`)
+        Logger.log(`----------`)
         // Logger.log(`> PromiseMap Size: ${Object.keys(promiseMap).length}`)
         // Logger.log(`> PromiseMap keys: ${Object.keys(promiseMap)}`)
         this.data = Object.entries(promiseMap).map((p) => {
