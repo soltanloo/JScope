@@ -14,14 +14,26 @@ export class Coverage {
     private _logs: any[]
     private _promiseMap: any
     private _functionsMap: any
+    private _projectPath: string
+    private _projectName: string
 
     constructor(logUri?: vscode.Uri) {
         this._logUri = logUri || vscode.Uri.file('')
+        this._projectPath = '' 
+        this._projectName = '' 
         this._logs = []
+    }
+
+    setProjectInfo(projectPath: string, projectName: string) {
+        this._projectPath = projectPath
+        this._projectName = projectName
+        this._logs = this._pass0_cleanupLogs(this._logs)
     }
 
     clear() {
         this._logs = [];
+        this._projectPath = '' 
+        this._projectName = '' 
         this._promiseMap = {}
         this._functionsMap = {}
     }
@@ -127,6 +139,9 @@ export class Coverage {
         return _logs.map((log) => {
             if (log.location) {
                 log.location = log.location.replace(/\)|\(/g, '').replace('*file://', '')
+                
+                let relativePathStartInd = log.location.indexOf(this._projectName) + this._projectName.length
+                log.location = this._projectPath + log.location.substring(relativePathStartInd)
             }
             return log
         })
