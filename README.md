@@ -27,4 +27,5 @@ box (1) shows open projects in this vscode window, you can add a new folder to w
 
 * `node-fetch`: [github link](https://github.com/node-fetch/node-fetch)
 * `promise-coverage-tests`: [github link](https://github.com/MohGanji/promise-coverage-tests)
+* `honoka`: [github link](https://github.com/kokororin/honoka.git) - run `npm i; npm run build` after cloning.
 * `fetchr`: [github link](https://github.com/yahoo/fetchr.git) - partial logs
