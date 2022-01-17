@@ -25,8 +25,8 @@ box (1) shows open projects in this vscode window, you can add a new folder to w
 
 ### <a name="benchmark-projects">Here is the list of currently available benchmark projects</a>
 
-* `node-fetch`: [github link](https://github.com/node-fetch/node-fetch)
+* `node-fetch`: [github link](https://github.com/node-fetch/node-fetch) - Clone the repo, run `git checkout 1028f83`. Then run `npm i`.
+* `honoka`: [github link](https://github.com/kokororin/honoka.git) - Clone the repo, run `git checkout 6c6ed2a`. Then run `npm i; npm run build`.
+* `controlled-promise`: [github link](https://github.com/vitalets/controlled-promise.git). - Clone the repo, run `git checkout a218f82`. Then run `npm i`;
 * `promise-coverage-tests`: [github link](https://github.com/MohGanji/promise-coverage-tests)
-* `honoka`: [github link](https://github.com/kokororin/honoka.git) - run `npm i; npm run build` after cloning.
-* `controlled-promise`: [github link](https://github.com/vitalets/controlled-promise.git).
 * `fetchr`: [github link](https://github.com/yahoo/fetchr.git) - partial logs
