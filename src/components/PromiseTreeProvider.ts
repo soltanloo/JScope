@@ -136,18 +136,18 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         // Logger.log(`pInfo: ${JSON.stringify(pInfo)}`)
 
         // Def location
-        let defTreeItem = new LocationTreeItem({
-            label: 'Def location', 
-            location: pInfo.location,
-            description: 'Def'
-        })
+        // let defTreeItem = new LocationTreeItem({
+        //     label: 'Def location', 
+        //     location: pInfo.location,
+        //     description: 'Def'
+        // })
 
         // first call location
-        let useTreeItem = new LocationTreeItem({
-            label: 'Use location', 
-            location: pInfo.location2,
-            description: 'Use'
-        })
+        // let useTreeItem = new LocationTreeItem({
+        //     label: 'Use location', 
+        //     location: pInfo.location2,
+        //     description: 'Use'
+        // })
     
         
         const coverageType = this._getCoverageType()
@@ -202,7 +202,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
         return [
             // defTreeItem, 
-            useTreeItem, 
+            // useTreeItem, 
             ...fulfills, 
             ...rejects
         ]
