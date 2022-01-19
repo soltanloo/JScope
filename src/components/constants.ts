@@ -18,6 +18,8 @@ export const COMMAND_IDS = {
     PROMISE_TREE_VIEW: 'cap-tree-view',
     PROMISE_TREE_CONFIG_WEBVIEW: 'cap-config-webview',
     CONFIG__UPDATE_CONFIG: 'cap-config.update-config',
+    
+    MENU__OPEN_CALL_LOCATION: 'right-click-menu.open-call-location',
   };
 
 export const ANALYSIS_PATHS = {
@@ -30,17 +32,23 @@ export const ANALYSIS_PATHS = {
     TMP_LOG_DIR: '/tmp/__promise__coverage__logs'
 }
 
-export const P_TYPES = {
-    NewPromise: 'NewPromise',
-    AsyncFunction: 'AsyncFunction',
-    Await: 'Await',
-    PromiseThen: 'PromiseThen',
-    PromiseCatch: 'PromiseCatch',
-    PromiseResolve: 'PromiseResolve',
-    PromiseReject: 'PromiseReject',
-    PromiseAll: 'PromiseAll',
-    PromiseRace: 'PromiseRace',
-    CallbackArg: 'CallbackArg',
+export enum P_TYPE {
+    NewPromise = 'NewPromise',
+    AsyncFunction = 'AsyncFunction',
+    Await = 'Await',
+    PromiseThen = 'PromiseThen',
+    PromiseCatch = 'PromiseCatch',
+    PromiseResolve = 'PromiseResolve',
+    PromiseReject = 'PromiseReject',
+    PromiseAll = 'PromiseAll',
+    PromiseRace = 'PromiseRace',
+    CallbackArg = 'CallbackArg',
+}
+
+export enum COVERAGE_TYPE {
+    settle = 'settle',
+    register = 'register',
+    execute = 'execute',
 }
 
 export const LOG_TAGS = {

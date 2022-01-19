@@ -1,3 +1,5 @@
+import { COVERAGE_TYPE, P_TYPE } from "./constants"
+
 export default class CoverageHelper {
     static isInsideBlock(innerLocation: string, outerLocation: string) {
         let coordsInner = innerLocation.replace(/\)|\(/g, '').split(':')
@@ -22,6 +24,27 @@ export default class CoverageHelper {
         for (var item of iterable) {
             if (predicate(item))
                 yield item;
+        }
+    }
+
+    static requiredReactions(coverage: COVERAGE_TYPE, ptype: P_TYPE): ('resolve' | 'reject')[] {
+        if([COVERAGE_TYPE.execute, COVERAGE_TYPE.register].includes(coverage)) {
+            if([P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(ptype))
+                return ['reject']
+            else if(ptype === P_TYPE.PromiseCatch)
+                return []
+            else if([P_TYPE.PromiseResolve].includes(ptype))
+                return ['resolve']
+            return ['resolve', 'reject']
+        }
+        else {// settlement
+            if([P_TYPE.PromiseReject].includes(ptype))
+                return ['reject']
+            else if(ptype === P_TYPE.PromiseCatch) // we don't semantically want to see promiseCatch throw errors.
+                return ['resolve']
+            else if([P_TYPE.PromiseResolve].includes(ptype))
+                return ['resolve']
+            return ['resolve', 'reject']
         }
     }
 }

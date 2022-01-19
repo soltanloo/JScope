@@ -7,7 +7,6 @@
 		"vscode": "^1.32.0"
 	},
 	"activationEvents": [
-		"onCommand:cap.refresh",
 		"onCommand:cap.run-coverage",
 		"onView:cap-view-container",
 		"onView:cap-tree-view",
@@ -16,14 +15,14 @@
 	"main": "./out/extension.js",
 	"contributes": {
 		"viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "cap-view-container",
-                    "title": "CAP",
-                    "icon": "media/area.png"
-                }
-            ]
-        },
+			"activitybar": [
+				{
+					"id": "cap-view-container",
+					"title": "Async Coverage",
+					"icon": "media/area.png"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "cap.run-coverage",
@@ -34,6 +33,10 @@
 				"category": "CAP: Update Config",
 				"title": "Update Promise Coverage Configurations",
 				"icon": "$(clear-all)"
+			},
+			{
+				"command": "right-click-menu.open-call-location",
+				"title": "open call location"
 			}
 		],
 		"views": {
@@ -48,29 +51,35 @@
 					"name": "Promise Coverage view"
 				}
 			]
-		}
+		},
+		"menus": {
+            "view/item/context": [
+                {
+                    "command": "right-click-menu.open-call-location",
+                    "when": "viewItem == asyncEntityTreeNode"
+                }
+            ]
+        }
 	},
 	"scripts": {
 		"build": "npm run build:main && npm run compile && npm run build:pull-submodules && npm run build:build-submodules",
 		"build:main": "npm i",
 		"build:pull-submodules": "git submodule update --init",
 		"build:build-submodules": "cd async-coverage && yarn install && cd ..",
-		
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"lint": "eslint . --ext .ts,.tsx",
 		"watch": "tsc -watch -p ./",
-		
 		"test:integration": "node ./out/test/runTests.js integration",
 		"test:unit": "node ./out/test/runTests.js unit",
 		"test": "npm run test:unit && npm run test:integration",
 		"build-n-test": "npm run build && npm run test",
-
 		"clean:test": "rm -r out/test",
 		"clean": "rm -r ./out"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.4",
+		"@types/istanbul": "^0.4.30",
 		"@types/mocha": "^9.0.0",
 		"@types/node": "^12.12.0",
 		"@types/vscode": "^1.32.0",
@@ -83,6 +92,8 @@
 	"dependencies": {
 		"@vscode/test-electron": "^1.6.2",
 		"glob": "^7.2.0",
+		"istanbul": "^0.4.5",
+		"nyc": "^15.1.0",
 		"vscode-test": "^1.6.1"
 	}
 }

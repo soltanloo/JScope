@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { DESCRIPTION_MAP } from './constants';
+import { COVERAGE_TYPE, DESCRIPTION_MAP } from './constants';
 import { Coverage } from './Coverage';
 import CoverageReportProvider from './CoverageReportProvider';
 import Logger from './Logger';
@@ -17,8 +17,8 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     private static instance: PromiseTreeProvider | undefined;
     
     private _extensionUri: vscode.Uri;
-    private _config: {query?: string, promiseTypes: string[], coverageType: string}
-        = {promiseTypes: ['all'], coverageType: 'settlement'}
+    private _config: {query?: string, promiseTypes: string[], coverageType: COVERAGE_TYPE}
+        = {promiseTypes: ['all'], coverageType: COVERAGE_TYPE.settle}
     
     private constructor(extensionUri: vscode.Uri) {
         this.data = []
@@ -112,7 +112,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         return element.children;
     }
 
-    updateConfig(config: {promiseTypes?: string[], query?: string, coverageType?: string}) {
+    updateConfig(config: {promiseTypes?: string[], query?: string, coverageType?: COVERAGE_TYPE}) {
         Logger.log(`PROMISE TREE UPDATE CONFIG: ${JSON.stringify(config)}`)
         if(config.query) {
             this._config.query = config.query
@@ -208,17 +208,15 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         ]
     }
 
-    private _getReactionFunctionLocation(pInfo: any, coverageType: 'settle' | 'register' | 'execute', reaction: any, functionsMap: any) {
+    private _getReactionFunctionLocation(pInfo: any, coverageType: COVERAGE_TYPE, reaction: any, functionsMap: any) {
         // Logger.log(`ctype: ${coverageType}, reaction: ${reaction.reaction}, fid: ${reaction.fid}, wrapperFid: ${reaction.wrapperFid}`)
         if(['register'].includes(coverageType))
             return functionsMap[reaction.wrapperFid]?.location
         return functionsMap[reaction.fid]?.location
     }
 
-    private _getCoverageType(): 'settle' | 'register' | 'execute' {
-        return this._config.coverageType === 'settlement' ? 'settle' :
-               this._config.coverageType === 'registration' ? 'register' :
-               this._config.coverageType === 'execution' ? 'execute' : 'settle';
+    private _getCoverageType(): COVERAGE_TYPE {
+        return this._config.coverageType;
     }
 
     private _getCoverageIconForPromise(promiseInfo: any): vscode.ThemeIcon {

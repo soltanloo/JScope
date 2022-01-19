@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
-import { P_TYPES } from './constants'
+import { P_TYPE } from './constants'
 
 export function convertLocationToUriAndRange(location: string) {
     let loc = location.replace(/\)|\(/g, '').split(':')
@@ -18,16 +18,16 @@ export function getCoverageStatusForPromise(item: any) {
 
     return {
         settle: {
-            fulfill: ([P_TYPES.PromiseReject].includes(item.type) ? null : !!item['settle']['fulfill'].length),
-            reject: ([P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(item.type) ? null : !!item['settle']['reject'].length)
+            fulfill: ([P_TYPE.PromiseReject].includes(item.type) ? null : !!item['settle']['fulfill'].length),
+            reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['settle']['reject'].length)
         },
         register: {
-            fulfill: ([P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(item.type) ? null : !!item['register']['fulfill'].length),
-            reject: ([P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseResolve].includes(item.type) ? null : !!item['register']['reject'].length)
+            fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['register']['fulfill'].length),
+            reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['register']['reject'].length)
         },
         execute: {
-            fulfill: ([P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(item.type) ? null : !!item['execute']['fulfill'].length),
-            reject: ([P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseResolve].includes(item.type) ? null : !!item['execute']['reject'].length)
+            fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['execute']['fulfill'].length),
+            reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['execute']['reject'].length)
         },
     }
 }

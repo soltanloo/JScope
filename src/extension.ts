@@ -7,6 +7,7 @@ import { PromiseTreeProvider } from './components/PromiseTreeProvider';
 import { ConfigWebviewProvider } from './components/ConfigWebviewProvider';
 import { Analyzer } from './components/Analyzer';
 import Logger from './components/Logger';
+import { AsyncStmtTreeItem } from './components/TreeItem';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -39,6 +40,15 @@ export function activate(context: vscode.ExtensionContext) {
     analyzer.init(context, nodeprofPath)
     await analyzer.runAnalysis();
   }));
+
+  // RIGHT CLICK MENU commands
+  // OPEN_USE_LOCATION
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      IDS.MENU__OPEN_CALL_LOCATION, 
+      AsyncStmtTreeItem.openCallLocation
+    )
+  );
   
   
   // TODO: Use this for adding diagnostics on promises. https://raw.githubusercontent.com/microsoft/vscode-extension-samples/main/diagnostic-related-information-sample/src/extension.ts

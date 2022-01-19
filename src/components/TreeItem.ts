@@ -31,6 +31,8 @@ export class TreeItem extends vscode.TreeItem {
 }
   
 export class AsyncStmtTreeItem extends TreeItem {
+    promiseInfo: any;
+    
     constructor({label, children, type = TreeItemType.ASYNC_STMT, location, promiseInfo, iconPath}: 
         {label: string | vscode.TreeItemLabel, children?: TreeItem[], type?: TreeItemType, location: string, promiseInfo: any, iconPath?: vscode.ThemeIcon} ) {
         super({label, children, type, location});
@@ -41,10 +43,17 @@ export class AsyncStmtTreeItem extends TreeItem {
             arguments: [uri, {selection: range, preserveFocus: false}],
             title: ""
         }
+        this.promiseInfo = promiseInfo
         this.iconPath = iconPath
         this.description = promiseInfo['type']
         let codeDescription = trimLabel(promiseInfo['code'])
-        this.tooltip = new vscode.MarkdownString(codeDescription);
+        this.tooltip = new vscode.MarkdownString(promiseInfo.cid);
+        this.contextValue = 'asyncEntityTreeNode'
+    }
+
+    static openCallLocation(resource: AsyncStmtTreeItem) {
+        const {range, uri} = convertLocationToUriAndRange(resource.promiseInfo.location2)
+        return vscode.commands.executeCommand('vscode.open', uri, {selection: range, preserveFocus: false})
     }
 }
 

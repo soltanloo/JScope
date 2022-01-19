@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { P_TYPES, LOG_TAGS, CoverageGroupByEnum } from './constants'
+import { LOG_TAGS, CoverageGroupByEnum, P_TYPE } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
 import { objectFilter } from './utils'
@@ -314,7 +314,7 @@ export class Coverage {
         })
         let awaitsIterator = CoverageHelper.filterForMapValues(
             Object.values(promiseMap),
-            (val: any) => val.type === P_TYPES.Await
+            (val: any) => val.type === P_TYPE.Await
         )
         for (let awaitData of awaitsIterator) {
             const isInsideSomeTryCatchBlock = Array.from(tryCatchBlocksMap.values()).some(

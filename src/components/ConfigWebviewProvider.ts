@@ -114,12 +114,12 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 			<input type="search" placeholder="search in tree..." name="search" id="search">
 			
 			<p>Choose Coverage Type:</p>
-			<div><input type="radio" id="settlement" name="coverageType" value="settlement" checked>
-			<label for="settlement">Settlement coverage</label></div>
-			<div><input type="radio" id="registration" name="coverageType" value="registration">
-			<label for="registration">Registration coverage</label></div>
-			<div><input type="radio" id="execution" name="coverageType" value="execution">
-			<label for="execution">Execution coverage</label></div>
+			<div><input type="radio" id="settle" name="coverageType" value="settle" checked>
+			<label for="settle">Settlement coverage</label></div>
+			<div><input type="radio" id="register" name="coverageType" value="register">
+			<label for="register">Registration coverage</label></div>
+			<div><input type="radio" id="execute" name="coverageType" value="execute">
+			<label for="execute">Execution coverage</label></div>
 			<hr>
 			
 			<p>Select Promise Types:</p>

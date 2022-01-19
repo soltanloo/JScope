@@ -1,4 +1,4 @@
-import { P_TYPES } from './constants'
+import { P_TYPE } from './constants'
 
 
 export default class CoverageReportProvider {
@@ -52,20 +52,20 @@ ${Object.keys(types)
             fileMap[filename].pCnt++;
             // console.log('---')
             // console.log(val)
-            fileMap[filename].setResCnt += +(![P_TYPES.PromiseReject].includes(val.type) && !!val['settle']['fulfill'].length)
-            fileMap[filename].setRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(val.type) && !!val['settle']['reject'].length)
-            fileMap[filename].setResTot += +(![P_TYPES.PromiseReject].includes(val.type))
-            fileMap[filename].setRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(val.type))
+            fileMap[filename].setResCnt += +(![P_TYPE.PromiseReject].includes(val.type) && !!val['settle']['fulfill'].length)
+            fileMap[filename].setRejCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(val.type) && !!val['settle']['reject'].length)
+            fileMap[filename].setResTot += +(![P_TYPE.PromiseReject].includes(val.type))
+            fileMap[filename].setRejTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(val.type))
 
-            fileMap[filename].regResCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type) && !!val['register']['fulfill'].length)
-            fileMap[filename].regRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type) && !!val['register']['reject'].length)
-            fileMap[filename].regResTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type))
-            fileMap[filename].regRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type))
+            fileMap[filename].regResCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type) && !!val['register']['fulfill'].length)
+            fileMap[filename].regRejCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type) && !!val['register']['reject'].length)
+            fileMap[filename].regResTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type))
+            fileMap[filename].regRejTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type))
 
-            fileMap[filename].execResCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type) && !!val['execute']['fulfill'].length)
-            fileMap[filename].execRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type) && !!val['execute']['reject'].length)
-            fileMap[filename].execResTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type))
-            fileMap[filename].execRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type))
+            fileMap[filename].execResCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type) && !!val['execute']['fulfill'].length)
+            fileMap[filename].execRejCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type) && !!val['execute']['reject'].length)
+            fileMap[filename].execResTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type))
+            fileMap[filename].execRejTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type))
         })
         return Object.entries(fileMap).map((f: any) => {
             const filename = f[0]
@@ -86,7 +86,7 @@ ${Object.keys(types)
     }
 
     private static _getCoverageReportByType(promiseMap: any) {
-        const ptypesZero = Object.entries(P_TYPES).map(t => {
+        const ptypesZero = Object.entries(P_TYPE).map(t => {
             const key = `${t[1]}`
             return [key, 0]
         })
@@ -133,20 +133,20 @@ ${Object.keys(types)
 
             coverageObj.pCnt++;
 
-            coverageObj.setResCnt += +(![P_TYPES.PromiseReject].includes(val.type) && !!val['settle']['fulfill'].length)
-            coverageObj.setRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(val.type) && !!val['settle']['reject'].length)
-            coverageObj.setResTot += +(![P_TYPES.PromiseReject].includes(val.type))
-            coverageObj.setRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseResolve].includes(val.type))
+            coverageObj.setResCnt += +(![P_TYPE.PromiseReject].includes(val.type) && !!val['settle']['fulfill'].length)
+            coverageObj.setRejCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(val.type) && !!val['settle']['reject'].length)
+            coverageObj.setResTot += +(![P_TYPE.PromiseReject].includes(val.type))
+            coverageObj.setRejTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(val.type))
 
-            coverageObj.regResCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type) && !!val['register']['fulfill'].length)
-            coverageObj.regRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type) && !!val['register']['reject'].length)
-            coverageObj.regResTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type))
-            coverageObj.regRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type))
+            coverageObj.regResCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type) && !!val['register']['fulfill'].length)
+            coverageObj.regRejCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type) && !!val['register']['reject'].length)
+            coverageObj.regResTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type))
+            coverageObj.regRejTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type))
 
-            coverageObj.execResCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type) && !!val['execute']['fulfill'].length)
-            coverageObj.execRejCnt += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type) && !!val['execute']['reject'].length)
-            coverageObj.execResTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject, P_TYPES.PromiseThen].includes(val.type))
-            coverageObj.execRejTot += +(![P_TYPES.PromiseCatch, P_TYPES.PromiseReject].includes(val.type))
+            coverageObj.execResCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type) && !!val['execute']['fulfill'].length)
+            coverageObj.execRejCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type) && !!val['execute']['reject'].length)
+            coverageObj.execResTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type))
+            coverageObj.execRejTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type))
         })
         return {
             coverage: {
