@@ -19,6 +19,7 @@ export const COMMAND_IDS = {
     PROMISE_TREE_CONFIG_WEBVIEW: 'cap-config-webview',
     CONFIG__UPDATE_CONFIG: 'cap-config.update-config',
     
+    MENU__SHOW_ALL_ACTIONS: 'right-click-menu.show-all-executions',
     MENU__OPEN_CALL_LOCATION: 'right-click-menu.open-call-location',
   };
 
@@ -51,6 +52,11 @@ export enum COVERAGE_TYPE {
     execute = 'execute',
 }
 
+export enum PROMISE_OUTCOME {
+    fulfill = 'fulfill',
+    reject = 'reject'
+}
+
 export const LOG_TAGS = {
     NEW_PROMISE: 'new-promise',
     SETTLEMENT: 'settle',
@@ -66,8 +72,17 @@ export enum CoverageGroupByEnum {
     promiseType = 'promiseType',
 }
 
-export const DESCRIPTION_MAP = {
-    'settle': {resolve: 'resolved', reject: 'rejected'},
-    'register': {resolve: 'resolve registered', reject: 'reject registered'},
-    'execute': {resolve: 'resolve executed', reject: 'reject executed'},
+export interface CoverageStatusType {
+    settle: {fulfill: null | boolean, reject: null | boolean},
+    register: {fulfill: null | boolean, reject: null | boolean},
+    execute: {fulfill: null | boolean, reject: null | boolean}
+}
+
+export interface ReactionLogObj {
+    fid: string, 
+    wrapperFid: string, 
+    tag: string, 
+    reaction: string, 
+    value: string, 
+    path: string
 }

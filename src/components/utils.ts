@@ -2,6 +2,24 @@ import * as vscode from 'vscode'
 import * as path from 'path'
 import { P_TYPE } from './constants'
 
+export class DefaultDict {
+    constructor(defaultInit: any) {
+      return new Proxy({}, {
+        get: (target: any, name) => name in target ?
+          target[name] :
+          (target[name] = typeof defaultInit === 'function' ?
+            new defaultInit().valueOf() :
+            defaultInit)
+      })
+    }
+  }
+  
+export function isObjectEmpty(obj: any) {
+    for (const i in obj)
+        return false;
+    return true;
+}
+
 export function convertLocationToUriAndRange(location: string) {
     let loc = location.replace(/\)|\(/g, '').split(':')
     let [filepath, startLine, startCol, endLine, endCol] = loc
@@ -12,24 +30,6 @@ export function convertLocationToUriAndRange(location: string) {
     const end = new vscode.Position(+endLine - 1, +endCol - 1);
     const selectionRange = new vscode.Range(start, end)
     return {range: selectionRange, uri: selectedUri}
-}
-
-export function getCoverageStatusForPromise(item: any) {
-
-    return {
-        settle: {
-            fulfill: ([P_TYPE.PromiseReject].includes(item.type) ? null : !!item['settle']['fulfill'].length),
-            reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['settle']['reject'].length)
-        },
-        register: {
-            fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['register']['fulfill'].length),
-            reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['register']['reject'].length)
-        },
-        execute: {
-            fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['execute']['fulfill'].length),
-            reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['execute']['reject'].length)
-        },
-    }
 }
 
 export function getCoverageLabel(status: any, coverageType: string, fulfillOrReject: string) {
@@ -46,14 +46,6 @@ export function objectFilter(obj: any, predicate: Function){
     
 export function trimLabel(label: string): string {
     return label && label.length > 50 ? label.substr(0, 47) + '...' : label
-}
-
-export function createLabel(pInfo: any): string {
-    let loc = pInfo.location.replace(/\)|\(/g, '').split(':')
-    let [filepath, startLine, startCol, endLine, endCol] = loc
-    const filepathSplitted = filepath.split('/')
-    const filename = filepathSplitted[filepathSplitted.length-1]
-    return `${filename}:${startLine}:${endLine}`
 }
 
 export function getIconPath(extensionPath: string, icon: string): vscode.Uri {

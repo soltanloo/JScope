@@ -7,7 +7,7 @@ import { PromiseTreeProvider } from './components/PromiseTreeProvider';
 import { ConfigWebviewProvider } from './components/ConfigWebviewProvider';
 import { Analyzer } from './components/Analyzer';
 import Logger from './components/Logger';
-import { AsyncStmtTreeItem } from './components/TreeItem';
+import { AsyncStmtTreeItem, ReactionTreeItem } from './components/TreeItem';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -47,6 +47,15 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       IDS.MENU__OPEN_CALL_LOCATION, 
       AsyncStmtTreeItem.openCallLocation
+    )
+  );
+
+  // RIGHT CLICK MENU commands
+  // OPEN_USE_LOCATION
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      IDS.MENU__SHOW_ALL_ACTIONS, 
+      ReactionTreeItem.showAllExecutions
     )
   );
   

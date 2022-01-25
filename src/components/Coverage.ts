@@ -1,8 +1,9 @@
 import * as vscode from 'vscode'
-import { LOG_TAGS, CoverageGroupByEnum, P_TYPE } from './constants'
+import { LOG_TAGS, CoverageGroupByEnum, P_TYPE, PROMISE_OUTCOME, ReactionLogObj } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
-import { objectFilter } from './utils'
+import { DefaultDict, isObjectEmpty, objectFilter } from './utils'
+import Logger from './Logger'
 
 /**
  * - Keeps Promise map and functions map and other information
@@ -122,7 +123,9 @@ export class Coverage {
             let res = await this._pass2_mergePromisesBasedOnIid(promiseList)
             promiseMap = res.promiseMap
             promiseMap = await this._pass3_addReactions(this._logs, promiseMap, res.cidToIdMap)
+            let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, res.cidToIdMap)
             promiseMap = await this._pass4_handleTryCatchBlocks(this._logs, promiseMap)
+            promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap)
             this._promiseMap = promiseMap
         }
         
@@ -264,7 +267,7 @@ export class Coverage {
         let getId = (cid: string) => { return cidToIdMap[cid] }
         logs.forEach(log => {
             // Used to keep the same structure for all reactions.
-            let logVal = {
+            let logVal: ReactionLogObj = {
                 fid: log.fid, 
                 wrapperFid: log.wrapperFid, 
                 tag: log.tag, 
@@ -326,6 +329,73 @@ export class Coverage {
             }
         }
         return promiseMap
+    }
+
+    private async _handleSpecialSettlementCases(logs: any[], promiseMap: any, fidToPromiseMap: Map<string, string[]>) {
+        
+        logs.forEach((log: any) => {
+            let logVal: ReactionLogObj = {
+                fid: log.fid, 
+                wrapperFid: log.wrapperFid, 
+                tag: log.tag, 
+                reaction: log.reaction, 
+                value: log.value, 
+                path: `${log.fid}`
+            }
+            
+            if ([LOG_TAGS.INVOKE_FUN].includes(log.tag) && log.warn === 'function exited') {
+                Logger.log(`log of func invoke: ${JSON.stringify(log, null, 2)}`)
+                
+                if(!fidToPromiseMap.has(log.fid)) return;
+                // @ts-ignore
+                fidToPromiseMap.get(log.fid).map((key: string) => {
+                    Logger.log(`adding settle reaction to this key: ${key} : ${JSON.stringify(promiseMap[key])}`)
+                    if(isObjectEmpty(log.exceptionVal))
+                        promiseMap[key]['settle'][PROMISE_OUTCOME.fulfill].push(logVal)
+                    else
+                        promiseMap[key]['settle'][PROMISE_OUTCOME.reject].push(logVal)
+                })    
+            }
+        })
+        return promiseMap
+    }
+
+    private _getFidToPromiseMap(promiseMap: any, cidToIdMap: any): Map<string, string[]> {
+        // go through promises, if they have parents, check their parent objects, then in their parents(with their own type), if there is any reaction registered with their type(fulfill for then, reject for catch, etc.) add the fid->pid pair to the map
+        let fidToPromiseMap: Map<string, string[]> = new Map()
+        Object.keys(promiseMap).forEach(cid => {
+            let pInfo = promiseMap[cid]
+            if(!pInfo.parent) return;
+            
+            let reaction = undefined
+            if(pInfo.type === P_TYPE.PromiseThen) reaction = PROMISE_OUTCOME.fulfill
+            else if(pInfo.type === P_TYPE.PromiseCatch) reaction = PROMISE_OUTCOME.reject
+            
+            if(!reaction) return;
+            Logger.log(`parent: ${cid} is child of ${cidToIdMap[pInfo.parent]}`)
+            let parentInfo = promiseMap[cidToIdMap[pInfo.parent]]
+            parentInfo['register'][reaction].forEach((logVal: ReactionLogObj) => {
+                Logger.log(`hereeeeeeee ${logVal.fid}`)
+                // @ts-ignore
+                let prev = fidToPromiseMap.get(logVal.fid)
+                if(!prev) prev = []
+                prev.push(cid)
+                fidToPromiseMap.set(logVal.fid, prev)
+            });
+        })
+
+        function replacer(key: any, value: any) {
+            if(value instanceof Map) {
+                return {
+                dataType: 'Map',
+                value: Array.from(value.entries()), // or with spread: value: [...value]
+                };
+            } else {
+                return value;
+            }
+        }
+        Logger.log(`fidToPromiseMap: ${JSON.stringify(fidToPromiseMap, replacer, 2)}`)
+        return fidToPromiseMap
     }
 
 }

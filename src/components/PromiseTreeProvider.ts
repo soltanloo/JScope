@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
-import { COVERAGE_TYPE, DESCRIPTION_MAP } from './constants';
+import { CoverageStatusType, COVERAGE_TYPE } from './constants';
 import { Coverage } from './Coverage';
+import CoverageHelper from './CoverageHelper';
 import CoverageReportProvider from './CoverageReportProvider';
 import Logger from './Logger';
 import { AsyncStmtTreeItem, LocationTreeItem, ReactionTreeItem, TreeItem, TreeItemType } from './TreeItem';
-import { createLabel, getCoverageStatusForPromise, trimLabel } from './utils';
 
 /**
  * - Creates a tree containing data related to Async Items in a project.
@@ -51,6 +51,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         Logger.log('> Updating tree data with new promiseMap...')
         const promiseMap = await this.cov.getPromiseMap(this._config) // TODO: Handle a case where the log file may not exist.
         Logger.log(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
+        // Logger.log(`> Promise map created. Map: ${JSON.stringify(promiseMap, null, 2)}`)
         const functionsMap = await this.cov.getFunctionsMap()
         Logger.log(`> Function map created. Keys: ${Object.keys(functionsMap).length}`)
         const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
@@ -66,7 +67,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             let loc = val['location']
             // Logger.log(`> valcode: ${val['code']}, ${typeof val['code']} cid: ${val['cid']}, id:${id}`)
             // TODO: Construct labels based on a structure.
-            let label: string | vscode.TreeItemLabel = createLabel(val)
+            let label: string | vscode.TreeItemLabel = TreeItem.createLabelFromLocation(loc)
             
             if(!!this._config.query) {
                 let labelHighlightStart = label.indexOf(this._config.query)
@@ -81,12 +82,15 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
                 }
             }
             // Logger.log(`> adding new tree leaf: label: ${label}, location: ${loc}`)
+            const coverage = CoverageHelper.getCoverageStatusForPromise(val)
             return new AsyncStmtTreeItem({
                 label: label, 
                 location: loc, 
                 children: this.createChildrenForTreeItem(val, functionsMap),
                 promiseInfo: val,
-                iconPath: this._getCoverageIconForPromise(val),
+                iconPath: this._getCoverageIconForPromise(coverage),
+                coverageStatus: coverage,
+                coverageType: this._getCoverageType(),
             })
 
         })
@@ -159,17 +163,17 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         fulfills = pInfo[coverageType].fulfill.map((item: any) => {
             // TODO: Construct labels based on a defined structure.
             
-            let loc = this._getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
+            let loc = ReactionTreeItem.getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
             
-            let itemKey = `${JSON.stringify(item.value)}:${loc}`
+            let itemKey = ReactionTreeItem.createLabel(item.value, loc)
             if(fulfillGroups.has(itemKey)) return null
             fulfillGroups.set(itemKey, true)
             
             let treeItem = new ReactionTreeItem({
-                label: trimLabel(JSON.stringify(item.value)), 
+                label: TreeItem.createLabelFromLocation(loc), 
                 location: loc,
-                iconPath: new vscode.ThemeIcon('add', new vscode.ThemeColor('minimapGutter.addedBackground')),
-                description: DESCRIPTION_MAP[coverageType].resolve,
+                iconPath: new vscode.ThemeIcon('organization-filled', new vscode.ThemeColor('tab.activeForeground')),//, new vscode.ThemeColor('minimapGutter.addedBackground')),
+                description: ReactionTreeItem.getDescription(coverageType, 'resolve'),
             })
             return treeItem
         }).filter(Boolean)
@@ -182,17 +186,17 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         let rejectGroups = new Map<String, Boolean>() // group reactions based on value+location as key.
         rejects = pInfo[coverageType].reject.map((item: any) => {
             
-            let loc = this._getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
+            let loc = ReactionTreeItem.getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
             
-            let itemKey = `${JSON.stringify(item.value)}:${loc}`
+            let itemKey = ReactionTreeItem.createLabel(item.value, loc)
             if(rejectGroups.has(itemKey)) return null
             rejectGroups.set(itemKey, true)
             
             let treeItem = new ReactionTreeItem({
-                label: trimLabel(JSON.stringify(item.value)), 
+                label: TreeItem.createLabelFromLocation(loc), 
                 location: loc,
-                iconPath: new vscode.ThemeIcon('remove', new vscode.ThemeColor('minimapGutter.modifiedBackground')),
-                description: DESCRIPTION_MAP[coverageType].reject,
+                iconPath: new vscode.ThemeIcon('organization-outline', new vscode.ThemeColor('tab.inactiveForeground')),
+                description: ReactionTreeItem.getDescription(coverageType, 'reject'),
             })
 
             return treeItem
@@ -208,40 +212,34 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         ]
     }
 
-    private _getReactionFunctionLocation(pInfo: any, coverageType: COVERAGE_TYPE, reaction: any, functionsMap: any) {
-        // Logger.log(`ctype: ${coverageType}, reaction: ${reaction.reaction}, fid: ${reaction.fid}, wrapperFid: ${reaction.wrapperFid}`)
-        if(['register'].includes(coverageType))
-            return functionsMap[reaction.wrapperFid]?.location
-        return functionsMap[reaction.fid]?.location
-    }
-
     private _getCoverageType(): COVERAGE_TYPE {
         return this._config.coverageType;
     }
 
-    private _getCoverageIconForPromise(promiseInfo: any): vscode.ThemeIcon {
-        // TODO: take into account semantics of promises as well.
-        const coverageStatus = getCoverageStatusForPromise(promiseInfo);
-        const coverageType = this._getCoverageType()
-        const cover = coverageStatus[coverageType]
+    private _getCoverageIconForPromise(coverageForPromise: CoverageStatusType): vscode.ThemeIcon {
+        let cover = coverageForPromise[this._getCoverageType()]
         const ICON_MAP = {
             FULLY_COVERED: 'star-full',
             PARTIALLY_COVERED: 'star-half',
-            NOT_COVERED: 'star-empty'
+            NOT_COVERED: 'star-empty',
         }
         const COLOR_ID_MAP = {
             FULLY_COVERED: 'inputValidation.infoBackground',
             PARTIALLY_COVERED: 'inputValidation.warningBackground',
             NOT_COVERED: 'inputValidation.errorBackground'
         }
+        // @ts-ignore
+        const total_required = Object.keys(cover).filter(k => cover[k] !== null).length
+        // @ts-ignore
+        const total_covered = Object.keys(cover).filter(k => cover[k] === true).length
         const icon = 
-            cover.fulfill && cover.reject ? ICON_MAP.FULLY_COVERED :
-            cover.fulfill || cover.reject ? ICON_MAP.PARTIALLY_COVERED :
-                                            ICON_MAP.NOT_COVERED;
+            total_required === total_covered ?                    ICON_MAP.FULLY_COVERED :
+            total_covered > 0 && total_required > total_covered ? ICON_MAP.PARTIALLY_COVERED :
+                                                                  ICON_MAP.NOT_COVERED;
         const color = 
-            cover.fulfill && cover.reject ? COLOR_ID_MAP.FULLY_COVERED :
-            cover.fulfill || cover.reject ? COLOR_ID_MAP.PARTIALLY_COVERED :
-                                            COLOR_ID_MAP.NOT_COVERED;
+            total_required === total_covered ?                    COLOR_ID_MAP.FULLY_COVERED :
+            total_covered > 0 && total_required > total_covered ? COLOR_ID_MAP.PARTIALLY_COVERED :
+                                                                  COLOR_ID_MAP.NOT_COVERED;
 
         return new vscode.ThemeIcon(icon, new vscode.ThemeColor(color))
     }

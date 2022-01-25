@@ -1,6 +1,28 @@
-import { COVERAGE_TYPE, P_TYPE } from "./constants"
+import { CoverageStatusType, COVERAGE_TYPE, PROMISE_OUTCOME, P_TYPE } from "./constants"
+import Logger from "./Logger"
 
 export default class CoverageHelper {
+    static getCoverageStatusForPromise(item: any): CoverageStatusType {
+        // TODO: take into account semantics of promises as well.
+        
+        let cov = {
+            settle: {
+                fulfill: ([P_TYPE.PromiseReject].includes(item.type) ? null : !!item['settle']['fulfill'].length),
+                reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['settle']['reject'].length)
+            },
+            register: {
+                fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['register']['fulfill'].length),
+                reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['register']['reject'].length)
+            },
+            execute: {
+                fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['execute']['fulfill'].length),
+                reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['execute']['reject'].length)
+            },
+        }
+        Logger.log(`item type: ${item.cid} - ${item.type} - ${JSON.stringify(cov, null, 2)}`)
+        return cov
+    }
+    
     static isInsideBlock(innerLocation: string, outerLocation: string) {
         let coordsInner = innerLocation.replace(/\)|\(/g, '').split(':')
         let coordsOuter = outerLocation.replace(/\)|\(/g, '').split(':')
@@ -27,24 +49,24 @@ export default class CoverageHelper {
         }
     }
 
-    static requiredReactions(coverage: COVERAGE_TYPE, ptype: P_TYPE): ('resolve' | 'reject')[] {
+    static requiredReactions(coverage: COVERAGE_TYPE, ptype: P_TYPE): PROMISE_OUTCOME[] {
         if([COVERAGE_TYPE.execute, COVERAGE_TYPE.register].includes(coverage)) {
             if([P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(ptype))
-                return ['reject']
+                return [PROMISE_OUTCOME.reject]
             else if(ptype === P_TYPE.PromiseCatch)
                 return []
             else if([P_TYPE.PromiseResolve].includes(ptype))
-                return ['resolve']
-            return ['resolve', 'reject']
+                return [PROMISE_OUTCOME.fulfill]
+            return [PROMISE_OUTCOME.fulfill, PROMISE_OUTCOME.reject]
         }
         else {// settlement
             if([P_TYPE.PromiseReject].includes(ptype))
-                return ['reject']
+                return [PROMISE_OUTCOME.reject]
             else if(ptype === P_TYPE.PromiseCatch) // we don't semantically want to see promiseCatch throw errors.
-                return ['resolve']
+                return [PROMISE_OUTCOME.fulfill]
             else if([P_TYPE.PromiseResolve].includes(ptype))
-                return ['resolve']
-            return ['resolve', 'reject']
+                return [PROMISE_OUTCOME.fulfill]
+            return [PROMISE_OUTCOME.fulfill, PROMISE_OUTCOME.reject]
         }
     }
 }

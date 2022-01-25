@@ -14,6 +14,13 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"productIconThemes": [
+			{
+				"id": "async-coverage-icons",
+				"label": "Async Coverage Icons",
+				"path": "./media/icons/async-coverage-product-icon-theme.json"
+			}
+		],
 		"viewsContainers": {
 			"activitybar": [
 				{
@@ -36,7 +43,11 @@
 			},
 			{
 				"command": "right-click-menu.open-call-location",
-				"title": "open call location"
+				"title": "Go to Reference"
+			},
+			{
+				"command": "right-click-menu.show-all-executions",
+				"title": "Show All Executions"
 			}
 		],
 		"views": {
@@ -53,13 +64,17 @@
 			]
 		},
 		"menus": {
-            "view/item/context": [
-                {
-                    "command": "right-click-menu.open-call-location",
-                    "when": "viewItem == asyncEntityTreeNode"
-                }
-            ]
-        }
+			"view/item/context": [
+				{
+					"command": "right-click-menu.open-call-location",
+					"when": "viewItem == AsyncStatementNode"
+				},
+				{
+					"command": "right-click-menu.show-all-executions",
+					"when": "viewItem == ReactionNode"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"build": "npm run build:main && npm run compile && npm run build:pull-submodules && npm run build:build-submodules",
@@ -87,7 +102,8 @@
 		"@typescript-eslint/parser": "^4.16.0",
 		"eslint": "^7.21.0",
 		"mocha": "^9.1.2",
-		"typescript": "^4.2.2"
+		"typescript": "^4.2.2",
+		"webfont": "^11.2.26"
 	},
 	"dependencies": {
 		"@vscode/test-electron": "^1.6.2",
