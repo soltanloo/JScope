@@ -19,7 +19,6 @@ export default class CoverageHelper {
                 reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['execute']['reject'].length)
             },
         }
-        Logger.log(`item type: ${item.cid} - ${item.type} - ${JSON.stringify(cov, null, 2)}`)
         return cov
     }
     
