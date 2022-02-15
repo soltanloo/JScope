@@ -1,8 +1,8 @@
 import * as vscode from 'vscode'
-import { LOG_TAGS, CoverageGroupByEnum, P_TYPE, PROMISE_OUTCOME, ReactionLogObj } from './constants'
+import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
-import { DefaultDict, isObjectEmpty, objectFilter } from './utils'
+import { isObjectEmpty, objectFilter } from './utils'
 import Logger from './Logger'
 
 /**
@@ -28,7 +28,7 @@ export class Coverage {
     setProjectInfo(projectPath: string, projectName: string) {
         this._projectPath = projectPath
         this._projectName = projectName
-        this._logs = this._pass0_cleanupLogs(this._logs)
+        this._logs = this._cleanupLogs(this._logs)
     }
 
     clear() {
@@ -65,47 +65,47 @@ export class Coverage {
         return functionsMap
     }
 
-    private _mergePromisesBasedOnIid() {
-        var filterObject = function (obj: any, predicate: Function) {
-            return Object.keys(obj)
-                .filter(key => predicate(obj[key]))
-                .reduce((res, key) => Object.assign(res, { [key]: obj[key] }), {})
-        }
+    // private _mergePromisesBasedOnIidOnly() {
+    //     var filterObject = function (obj: any, predicate: Function) {
+    //         return Object.keys(obj)
+    //             .filter(key => predicate(obj[key]))
+    //             .reduce((res, key) => Object.assign(res, { [key]: obj[key] }), {})
+    //     }
 
-        let iidMap: any = {}
-        let promiseMapEntries = Object.entries(this._promiseMap).sort((a: any, b: any) => a[1].time - b[1].time)
-        promiseMapEntries.reduce((_tot, e) => {
-            const id = e[0]
-            const val: any = e[1]
-            if (iidMap[val.iid]) {
-                // merge
-                iidMap[val.iid] = {
-                    ...iidMap[val.iid],
-                    pids: [...iidMap[val.iid].pids, id],
-                    parent: val.parent ? [...iidMap[val.iid].parent, val.parent] : iidMap[val.iid].parent,
-                    register: {
-                        fulfill: iidMap[val.iid].register.fulfill.concat(val.register.fulfill),
-                        reject: iidMap[val.iid].register.reject.concat(val.register.reject),
-                    },
-                    execute: {
-                        fulfill: iidMap[val.iid].execute.fulfill.concat(val.execute.fulfill),
-                        reject: iidMap[val.iid].execute.reject.concat(val.execute.reject),
-                    },
-                }
-            } else {
-                // create initial object
-                iidMap[val.iid] = {
-                    ...val,
-                    pids: [id],
-                    parent: val.parent ? [val.parent] : [],
-                    parentIid: val.parent && this._promiseMap[val.parent] ? this._promiseMap[val.parent].iid : null,
-                }
-            }
-            return _tot
-        }, 0)
+    //     let iidMap: any = {}
+    //     let promiseMapEntries = Object.entries(this._promiseMap).sort((a: any, b: any) => a[1].time - b[1].time)
+    //     promiseMapEntries.reduce((_tot, e) => {
+    //         const id = e[0]
+    //         const val: any = e[1]
+    //         if (iidMap[val.iid]) {
+    //             // merge
+    //             iidMap[val.iid] = {
+    //                 ...iidMap[val.iid],
+    //                 pids: [...iidMap[val.iid].pids, id],
+    //                 parent: val.parent ? [...iidMap[val.iid].parent, val.parent] : iidMap[val.iid].parent,
+    //                 register: {
+    //                     fulfill: iidMap[val.iid].register.fulfill.concat(val.register.fulfill),
+    //                     reject: iidMap[val.iid].register.reject.concat(val.register.reject),
+    //                 },
+    //                 execute: {
+    //                     fulfill: iidMap[val.iid].execute.fulfill.concat(val.execute.fulfill),
+    //                     reject: iidMap[val.iid].execute.reject.concat(val.execute.reject),
+    //                 },
+    //             }
+    //         } else {
+    //             // create initial object
+    //             iidMap[val.iid] = {
+    //                 ...val,
+    //                 pids: [id],
+    //                 parent: val.parent ? [val.parent] : [],
+    //                 parentIid: val.parent && this._promiseMap[val.parent] ? this._promiseMap[val.parent].iid : null,
+    //             }
+    //         }
+    //         return _tot
+    //     }, 0)
 
-        return iidMap
-    }
+    //     return iidMap
+    // }
 
     // returns a promise map based on the logs in filepath
     async getPromiseMap(
@@ -118,13 +118,12 @@ export class Coverage {
         else {
             await this._getLogs()
             let promiseList: any[] = []
-            this._logs = this._pass0_cleanupLogs(this._logs)
-            promiseList = await this._pass1_addPromises(this._logs, promiseList)
-            let res = await this._pass2_mergePromisesBasedOnIid(promiseList)
-            promiseMap = res.promiseMap
-            promiseMap = await this._pass3_addReactions(this._logs, promiseMap, res.cidToIdMap)
+            this._logs = this._cleanupLogs(this._logs)
+            promiseList = await this._addPromises(this._logs, promiseList)
+            let res = await this._mergePromisesBasedOnIid(promiseList)
+            promiseMap = await this._addReactions(this._logs, res.promiseMap, res.cidToIdMap)
             let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, res.cidToIdMap)
-            promiseMap = await this._pass4_handleTryCatchBlocks(this._logs, promiseMap)
+            promiseMap = await this._handleTryCatchBlocks(this._logs, promiseMap)
             promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap)
             this._promiseMap = promiseMap
         }
@@ -138,12 +137,12 @@ export class Coverage {
         return promiseMap
     }
 
-    private _pass0_cleanupLogs(_logs: any[]): any[] {
+    private _cleanupLogs(_logs: any[]): any[] {
         return _logs.map((log) => {
             if (log.location) {
                 log.location = log.location.replace(/\)|\(/g, '').replace('*file://', '')
                 
-                let relativePathStartInd = log.location.indexOf(this._projectName) + this._projectName.length
+                let relativePathStartInd = log.location.indexOf(`/${this._projectName}/`) + this._projectName.length + 1
                 log.location = this._projectPath + log.location.substring(relativePathStartInd)
             }
             return log
@@ -157,7 +156,7 @@ export class Coverage {
      * @returns {PromiseInfo[]} 
      * Returns a list of promise infor objects identified by "new-promise" tag
      */
-    private async _pass1_addPromises(logs: any[], promiseList: any[]) {
+    private async _addPromises(logs: any[], promiseList: any[]) {
         logs.reduce((counter, log) => {
             if (log.tag === LOG_TAGS.NEW_PROMISE) {
                 promiseList.push({
@@ -207,7 +206,7 @@ export class Coverage {
      * returns a map of promises based on an id + a mapping from cid to pairId
      * id is pair of <definitionIid, firstCallSiteIid> second one can be null, replaced by _
      */
-    private async _pass2_mergePromisesBasedOnIid(promiseList: any[]) {
+    private async _mergePromisesBasedOnIid(promiseList: any[]) {
         // TODO: FIX BUGS.
         // key: cid, 
         // val: Obj{p: PromiseInfo, observedTwice: boolean}
@@ -263,7 +262,7 @@ export class Coverage {
         return { promiseMap, cidToIdMap }
     }
 
-    private async _pass3_addReactions(logs: any[], promiseMap: any, cidToIdMap: any) {
+    private async _addReactions(logs: any[], promiseMap: any, cidToIdMap: any) {
         let getId = (cid: string) => { return cidToIdMap[cid] }
         logs.forEach(log => {
             // Used to keep the same structure for all reactions.
@@ -304,7 +303,7 @@ export class Coverage {
         return promiseMap
     }
 
-    private async _pass4_handleTryCatchBlocks(logs: any[], promiseMap: any) {
+    private async _handleTryCatchBlocks(logs: any[], promiseMap: any) {
         const tryCatchBlocksMap = new Map()
         logs.forEach((log: any) => {
             if ([LOG_TAGS.TRY_CATCH].includes(log.tag)) {
@@ -331,6 +330,7 @@ export class Coverage {
         return promiseMap
     }
 
+    // To handle settlements for special cases in chains.
     private async _handleSpecialSettlementCases(logs: any[], promiseMap: any, fidToPromiseMap: Map<string, string[]>) {
         
         logs.forEach((log: any) => {
@@ -361,10 +361,11 @@ export class Coverage {
     }
 
     private _getFidToPromiseMap(promiseMap: any, cidToIdMap: any): Map<string, string[]> {
-        // go through promises, if they have parents, check their parent objects, then in their parents(with their own type), if there is any reaction registered with their type(fulfill for then, reject for catch, etc.) add the fid->pid pair to the map
+        // go through promises, if they have parents, check their parent objects, 
+        // then in their parents(with their own type), if there is any reaction registered with their type(fulfill for then, reject for catch, etc.) add the fid->pid pair to the map
         let fidToPromiseMap: Map<string, string[]> = new Map()
-        Object.keys(promiseMap).forEach(cid => {
-            let pInfo = promiseMap[cid]
+        Object.keys(promiseMap).forEach(keyId => {
+            let pInfo = promiseMap[keyId]
             if(!pInfo.parent) return;
             
             let reaction = undefined
@@ -372,29 +373,28 @@ export class Coverage {
             else if(pInfo.type === P_TYPE.PromiseCatch) reaction = PROMISE_OUTCOME.reject
             
             if(!reaction) return;
-            Logger.log(`parent: ${cid} is child of ${cidToIdMap[pInfo.parent]}`)
             let parentInfo = promiseMap[cidToIdMap[pInfo.parent]]
             parentInfo['register'][reaction].forEach((logVal: ReactionLogObj) => {
-                Logger.log(`hereeeeeeee ${logVal.fid}`)
                 // @ts-ignore
                 let prev = fidToPromiseMap.get(logVal.fid)
                 if(!prev) prev = []
-                prev.push(cid)
+                if(!logVal.path.startsWith(keyId))
+                    prev.push(keyId)
                 fidToPromiseMap.set(logVal.fid, prev)
             });
         })
 
-        function replacer(key: any, value: any) {
-            if(value instanceof Map) {
-                return {
-                dataType: 'Map',
-                value: Array.from(value.entries()), // or with spread: value: [...value]
-                };
-            } else {
-                return value;
-            }
-        }
-        Logger.log(`fidToPromiseMap: ${JSON.stringify(fidToPromiseMap, replacer, 2)}`)
+        // function replacer(key: any, value: any) {
+        //     if(value instanceof Map) {
+        //         return {
+        //         dataType: 'Map',
+        //         value: Array.from(value.entries()), // or with spread: value: [...value]
+        //         };
+        //     } else {
+        //         return value;
+        //     }
+        // }
+        // Logger.log(`fidToPromiseMap: ${JSON.stringify(fidToPromiseMap, replacer, 2)}`)
         return fidToPromiseMap
     }
 
