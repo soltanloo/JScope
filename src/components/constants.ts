@@ -21,6 +21,8 @@ export const COMMAND_IDS = {
     
     MENU__SHOW_ALL_ACTIONS: 'right-click-menu.show-all-executions',
     MENU__OPEN_CALL_LOCATION: 'right-click-menu.open-call-location',
+
+    CALL_REFERENCES_TREE_VIEW: 'call-references-tree-view',
   };
 
 export const ANALYSIS_PATHS = {
@@ -72,17 +74,39 @@ export enum CoverageGroupByEnum {
     promiseType = 'promiseType',
 }
 
-export interface CoverageStatusType {
+export type CoverageStatusType = {
     settle: {fulfill: null | boolean, reject: null | boolean},
     register: {fulfill: null | boolean, reject: null | boolean},
     execute: {fulfill: null | boolean, reject: null | boolean}
 }
 
-export interface ReactionLogObj {
+export type Location = `${string}:${string}:${string}:${string}:${string}`
+export type Pid = `p${number}`
+
+export type PInfo = {
+    id: string,
+    location: Location,
+    iid: number,
+    refs: {id: string, location: Location}[],
+    pids: Pid[],
+    parent: Pid,
+    _parents: Pid[], // For debugging purposes
+    type: P_TYPE,
+    _types: P_TYPE[], // For debugging purposes
+    code: string,
+    settle: {fulfill: any[], reject: any[]},
+    register: {fulfill: any[], reject: any[]},
+    execute: {fulfill: any[], reject: any[]},
+    _logs: any[], // For debugging purposes
+}
+
+export type PMap = { [id: string]: PInfo; }
+
+export type ReactionLogObj = {
     fid: string, 
     wrapperFid: string, 
-    tag: string, 
-    reaction: string, 
+    tag: COVERAGE_TYPE, 
+    reaction: PROMISE_OUTCOME, 
     value: string, 
     path: string
 }

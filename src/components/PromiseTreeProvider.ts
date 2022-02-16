@@ -60,7 +60,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         Logger.log(`> ${coverageReport}`)
         Logger.log(`----------`)
         // Logger.log(`> PromiseMap Size: ${Object.keys(promiseMap).length}`)
-        // Logger.log(`> PromiseMap keys: ${Object.keys(promiseMap)}`)
+        Logger.log(`> PromiseMap: ${JSON.stringify(promiseMap, null, 2)}`)
         this.data = Object.entries(promiseMap).map((p) => {
             const id: string = p[0]
             const val: any = p[1]

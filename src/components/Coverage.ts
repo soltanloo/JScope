@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj } from './constants'
+import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
 import { isObjectEmpty, objectFilter } from './utils'
@@ -13,7 +13,8 @@ import Logger from './Logger'
 export class Coverage {
     private _logUri: vscode.Uri
     private _logs: any[]
-    private _promiseMap: any
+    private _promiseMap: PMap
+    private _pidToIdMap: {[pid: Pid]: string} // used to reduce search time from O(n) to O(1) when adding reactions. Filled while adding promises.
     private _functionsMap: any
     private _projectPath: string
     private _projectName: string
@@ -22,6 +23,8 @@ export class Coverage {
         this._logUri = logUri || vscode.Uri.file('')
         this._projectPath = '' 
         this._projectName = '' 
+        this._promiseMap = {}
+        this._pidToIdMap = {}
         this._logs = []
     }
 
@@ -36,6 +39,7 @@ export class Coverage {
         this._projectPath = '' 
         this._projectName = '' 
         this._promiseMap = {}
+        this._pidToIdMap = {}
         this._functionsMap = {}
     }
 
@@ -112,19 +116,18 @@ export class Coverage {
         config?: {query?: string, promiseTypes: string[], coverageType: string}
     ) {
         let promiseMap = {}
-        if (!!this._promiseMap) {
+        if (Object.keys(this._promiseMap).length) {
             promiseMap = this._promiseMap
         }
         else {
             await this._getLogs()
-            let promiseList: any[] = []
             this._logs = this._cleanupLogs(this._logs)
-            promiseList = await this._addPromises(this._logs, promiseList)
-            let res = await this._mergePromisesBasedOnIid(promiseList)
-            promiseMap = await this._addReactions(this._logs, res.promiseMap, res.cidToIdMap)
-            let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, res.cidToIdMap)
-            promiseMap = await this._handleTryCatchBlocks(this._logs, promiseMap)
-            promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap)
+            promiseMap = await this._addPromises(this._logs)
+            Logger.log(`pidToId Map: ${JSON.stringify(this._pidToIdMap, null, 2)}`)
+            promiseMap = await this._addReactions(this._logs, promiseMap)
+            // let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, res.cidToIdMap) // TODO:
+            // promiseMap = await this._handleTryCatchBlocks(this._logs, promiseMap)
+            // promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap) // TODO:
             this._promiseMap = promiseMap
         }
         
@@ -149,6 +152,10 @@ export class Coverage {
         })
     }
 
+    private getIdByPid(pid: Pid): string {
+        return this._pidToIdMap[pid]
+    }
+
     /**
      * 
      * @param {*} logs 
@@ -156,30 +163,57 @@ export class Coverage {
      * @returns {PromiseInfo[]} 
      * Returns a list of promise infor objects identified by "new-promise" tag
      */
-    private async _addPromises(logs: any[], promiseList: any[]) {
+    private async _addPromises(logs: any[]): Promise<PMap> {
+        
+        let promiseMap: PMap = {} // {[id: number]: PInfo}
         logs.reduce((counter, log) => {
             if (log.tag === LOG_TAGS.NEW_PROMISE) {
-                promiseList.push({
-                    parent: log.base && log.base.__cid ? log.base.__cid : null,
-                    settle: {
-                        fulfill: [],
-                        reject: [],
-                    },
-                    register: {
-                        fulfill: [],
-                        reject: [],
-                    },
-                    execute: {
-                        fulfill: [],
-                        reject: [],
-                    },
-                    type: log.ftype,
-                    iid: log.iid,
-                    cid: log.cid,
-                    location: log.location,
-                    code: log.code,
-                    time: counter,
-                })
+                
+                let id = log.iid // HERE the key identifier for promises is decided between {defLocation} | {defLocation + refs[0]} | {defLocation + refs}
+                
+                if(promiseMap.hasOwnProperty(id)) {
+                    promiseMap[id].pids.push(log.cid)
+                    promiseMap[id]._parents.push(log.base && log.base.__cid ? log.base.__cid : null)
+                    promiseMap[id]._types.push(log.ftype)
+                    promiseMap[id]._logs.push(log)
+                } else if(this.getIdByPid(log.cid) && this.getIdByPid(log.cid) !== id) {
+                    // cases for adding to refs. Where cid exists(in pidToIdMap), 
+                    // but doesn't match with its corresponding iid, then it is being returned to other places.
+                    // TODO: test with benchmarks.
+                    promiseMap[this.getIdByPid(log.cid)].refs.push({id, location: log.location})
+                    promiseMap[id]._logs.push(log)
+                } else {
+                    promiseMap[id] = {
+                        id: id,
+                        location: log.location,
+                        iid: log.iid,
+                        refs: [],
+                        pids: [log.cid],
+                        parent: log.base && log.base.__cid ? log.base.__cid : null,
+                        _parents: [log.base && log.base.__cid ? log.base.__cid : null],
+                        type: log.ftype,
+                        _types: [log.ftype],
+                        code: log.code,
+                        settle: {
+                            fulfill: [],
+                            reject: [],
+                        },
+                        register: {
+                            fulfill: [],
+                            reject: [],
+                        },
+                        execute: {
+                            fulfill: [],
+                            reject: [],
+                        },
+                        _logs: [log],
+                    }
+                }
+
+                // Only the first occurance in log is linked here, which is the first place that a promise is created.
+                if(!this.getIdByPid(log.cid)) {
+                    this._pidToIdMap[log.cid] = id
+                }
             }
             // else if(log.tag === LOG_TAGS.AWAIT) {
             //   if (log.isValPromise && log.valAwaited 
@@ -195,7 +229,7 @@ export class Coverage {
             // }
             return counter + 1
         }, 0)
-        return promiseList
+        return promiseMap
     }
 
     /**
@@ -262,8 +296,7 @@ export class Coverage {
         return { promiseMap, cidToIdMap }
     }
 
-    private async _addReactions(logs: any[], promiseMap: any, cidToIdMap: any) {
-        let getId = (cid: string) => { return cidToIdMap[cid] }
+    private async _addReactions(logs: any[], promiseMap: PMap) {
         logs.forEach(log => {
             // Used to keep the same structure for all reactions.
             let logVal: ReactionLogObj = {
@@ -276,15 +309,18 @@ export class Coverage {
             }
             
             if ([LOG_TAGS.REGISTER, LOG_TAGS.EXECUTE].includes(log.tag)) { 
-                if (promiseMap[getId(log.p.__cid)]) {
-                    promiseMap[getId(log.p.__cid)][log.tag][log.reaction].push(logVal)
+                let id = this.getIdByPid(log.p.__cid)
+                if (promiseMap.hasOwnProperty(id)) {
+                    promiseMap[id][logVal.tag][logVal.reaction].push(logVal)
                     let curr_cid = log.p.__cid
                     let prefix = ''
-                    while (promiseMap[getId(curr_cid)] && promiseMap[getId(curr_cid)].parent) {
-                        prefix = `${getId(curr_cid)}>${prefix}`
-                        curr_cid = promiseMap[getId(curr_cid)].parent
-                        if (promiseMap[getId(curr_cid)]) {
-                            promiseMap[getId(curr_cid)][log.tag][log.reaction].push({...logVal, path: `${prefix}${log.fid}`})
+                    let curr_key = this.getIdByPid(curr_cid)
+                    while (promiseMap.hasOwnProperty(curr_key) && promiseMap[curr_key].parent) {
+                        prefix = `${curr_key}>${prefix}`
+                        curr_cid = promiseMap[curr_key].parent
+                        curr_key = this.getIdByPid(curr_cid)
+                        if (promiseMap[curr_key]) {
+                            promiseMap[curr_key][logVal.tag][logVal.reaction].push({...logVal, path: `${prefix}${log.fid}`})
                         }
                     }
                 } else {
@@ -292,9 +328,10 @@ export class Coverage {
                 }
             }
             else if ([LOG_TAGS.SETTLEMENT].includes(log.tag)) { 
-                let cidToUse = `p${log.cid}`
-                if (promiseMap[getId(cidToUse)]) {
-                    promiseMap[getId(cidToUse)][log.tag][log.reaction].push(logVal)
+                let pid: Pid = `p${log.cid}`
+                if (promiseMap[this.getIdByPid(pid)]) {
+                    promiseMap[this.getIdByPid(pid)][logVal.tag][logVal.reaction].push(logVal)
+                    // TODO: define a link between promises here based one logVal.value
                 } else {
                     // console.error(`trying to access a non-existing promise with cid=${log.p.__cid}`)
                 }

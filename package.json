@@ -60,6 +60,10 @@
 				{
 					"id": "cap-tree-view",
 					"name": "Promise Coverage view"
+				},
+				{
+					"id": "call-references-tree-view",
+					"name": "References"
 				}
 			]
 		},

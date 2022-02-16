@@ -8,6 +8,7 @@ import { ConfigWebviewProvider } from './components/ConfigWebviewProvider';
 import { Analyzer } from './components/Analyzer';
 import Logger from './components/Logger';
 import { AsyncStmtTreeItem, ReactionTreeItem } from './components/TreeItem';
+import { CallReferencesTreeProvider } from './components/CallReferencesTreeProvider';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -22,6 +23,11 @@ export function activate(context: vscode.ExtensionContext) {
   // PROMISE TREE PROVIDER 
   const promiseTreeProvider = PromiseTreeProvider.getInstance(context.extensionUri)
   context.subscriptions.push(vscode.window.registerTreeDataProvider(IDS.PROMISE_TREE_VIEW, promiseTreeProvider));
+
+  // References tree provider 
+  const callReferencesTreeProvider = CallReferencesTreeProvider.getInstance()
+  context.subscriptions.push(vscode.window.registerTreeDataProvider(IDS.CALL_REFERENCES_TREE_VIEW, callReferencesTreeProvider));
+  
   
   
   // CONFIG WEBVIEW PROVIDER
@@ -51,7 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // RIGHT CLICK MENU commands
-  // OPEN_USE_LOCATION
+  // Show all executions
   context.subscriptions.push(
     vscode.commands.registerCommand(
       IDS.MENU__SHOW_ALL_ACTIONS, 

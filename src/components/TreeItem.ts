@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
+import { CallReferencesTreeProvider } from './CallReferencesTreeProvider';
 import { CoverageStatusType, COVERAGE_TYPE } from './constants';
+import Logger from './Logger';
 import { convertLocationToUriAndRange, trimLabel } from './utils';
 
 export enum TreeItemType {
@@ -91,7 +93,7 @@ export class AsyncStmtTreeItem extends TreeItem {
     protected _setTooltip(): void {
         if(this.status === TreeItemStatusEnum.Normal) {
             // let codeDescription = trimLabel(this.promiseInfo['code'])
-            this.tooltip = new vscode.MarkdownString(this.promiseInfo.cid);
+            this.tooltip = new vscode.MarkdownString(`${this.promiseInfo.id}`);
             let cov = this.coverageStatus[this.coverageType]
             // @ts-ignore
             Object.keys(cov).filter((k: string) => cov[k] === false).forEach(k => {
@@ -115,8 +117,8 @@ export class AsyncStmtTreeItem extends TreeItem {
     }
 
     static openCallLocation(resource: AsyncStmtTreeItem) {
-        const {range, uri} = convertLocationToUriAndRange(resource.promiseInfo.location2)
-        return vscode.commands.executeCommand('vscode.open', uri, {selection: range, preserveFocus: false})
+        const treeProvider = CallReferencesTreeProvider.getInstance()
+        return treeProvider.refresh(resource.promiseInfo.refs)
     }
 }
 
@@ -189,4 +191,32 @@ export class LocationTreeItem extends TreeItem {
         this.iconPath = iconPath || new vscode.ThemeIcon('debug-step-into', new vscode.ThemeColor('icon.foreground'))
         this.description = description
     }
+}
+
+
+export class CallReferenceTreeItem extends TreeItem {
+    constructor({label, children, type = TreeItemType.LOCATION, location, iconPath, description, extra}: 
+        {label: string | vscode.TreeItemLabel, children?: TreeItem[], type?: TreeItemType, location: string, iconPath?: vscode.ThemeIcon, description?: string, extra?: string} ) {
+        super({label, children, type, location});
+        const {range, uri} = convertLocationToUriAndRange(location)
+        this.command = {
+            command: "vscode.open",
+            arguments: [uri, {selection: range, preserveFocus: false}],
+            title: ""
+        }
+        this.iconPath = iconPath || new vscode.ThemeIcon('debug-step-into', new vscode.ThemeColor('icon.foreground'))
+        this.description = description
+        this.tooltip = extra
+    }
+}
+
+export class EmptyMessageTreeItem extends TreeItem {
+
+    constructor({label, children, type, location}: 
+        {label: string | vscode.TreeItemLabel, children?: TreeItem[], type?: TreeItemType, location: string} ) {
+        super({label, location: location});
+        this.command = undefined
+    }
+
+    protected _setTooltip(): void {}
 }
