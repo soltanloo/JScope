@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid } from './constants'
+import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid, ID } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
 import { isObjectEmpty, objectFilter } from './utils'
@@ -15,6 +15,7 @@ export class Coverage {
     private _logs: any[]
     private _promiseMap: PMap
     private _pidToIdMap: {[pid: Pid]: string} // used to reduce search time from O(n) to O(1) when adding reactions. Filled while adding promises.
+    private _plinks: {[id: ID]: ID} // used to show links, A -> B means that B is linked to A, so A will decide the fate of B.
     private _functionsMap: any
     private _projectPath: string
     private _projectName: string
@@ -25,6 +26,7 @@ export class Coverage {
         this._projectName = '' 
         this._promiseMap = {}
         this._pidToIdMap = {}
+        this._plinks = {}
         this._logs = []
     }
 
@@ -40,6 +42,7 @@ export class Coverage {
         this._projectName = '' 
         this._promiseMap = {}
         this._pidToIdMap = {}
+        this._plinks = {}
         this._functionsMap = {}
     }
 
@@ -125,6 +128,8 @@ export class Coverage {
             promiseMap = await this._addPromises(this._logs)
             Logger.log(`pidToId Map: ${JSON.stringify(this._pidToIdMap, null, 2)}`)
             promiseMap = await this._addReactions(this._logs, promiseMap)
+            Logger.log(`links: ${JSON.stringify(this._plinks, null, 2)}`)
+            promiseMap = await this._handleLinkedPromiseSettlements(promiseMap)
             // let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, res.cidToIdMap) // TODO:
             // promiseMap = await this._handleTryCatchBlocks(this._logs, promiseMap)
             // promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap) // TODO:
@@ -181,7 +186,7 @@ export class Coverage {
                     // but doesn't match with its corresponding iid, then it is being returned to other places.
                     // TODO: test with benchmarks.
                     promiseMap[this.getIdByPid(log.cid)].refs.push({id, location: log.location})
-                    promiseMap[id]._logs.push(log)
+                    promiseMap[this.getIdByPid(log.cid)]._logs.push(log)
                 } else {
                     promiseMap[id] = {
                         id: id,
@@ -189,6 +194,7 @@ export class Coverage {
                         iid: log.iid,
                         refs: [],
                         pids: [log.cid],
+                        links: [],
                         parent: log.base && log.base.__cid ? log.base.__cid : null,
                         _parents: [log.base && log.base.__cid ? log.base.__cid : null],
                         type: log.ftype,
@@ -330,12 +336,34 @@ export class Coverage {
             else if ([LOG_TAGS.SETTLEMENT].includes(log.tag)) { 
                 let pid: Pid = `p${log.cid}`
                 if (promiseMap[this.getIdByPid(pid)]) {
-                    promiseMap[this.getIdByPid(pid)][logVal.tag][logVal.reaction].push(logVal)
-                    // TODO: define a link between promises here based one logVal.value
+                    
+                    // promise is settled with another promise
+                    if(logVal.value?.hasOwnProperty('__cid') && 
+                        !promiseMap[this.getIdByPid(pid)].links.some(v => v.id === this.getIdByPid(logVal.value.__cid))) {
+
+                        let linkedToId = this.getIdByPid(logVal.value.__cid)
+                        promiseMap[this.getIdByPid(pid)].links.push({id: linkedToId, location: promiseMap[linkedToId]?.location || ""})
+                        if(linkedToId)
+                            this._plinks[linkedToId] = this.getIdByPid(pid)
+                    }
+                    else {
+                        // If not a promise linking, then settlement takes effect
+                        promiseMap[this.getIdByPid(pid)][logVal.tag][logVal.reaction].push(logVal)
+                    }
                 } else {
                     // console.error(`trying to access a non-existing promise with cid=${log.p.__cid}`)
                 }
             }
+        })
+        return promiseMap
+    }
+
+    private async _handleLinkedPromiseSettlements(promiseMap: PMap): Promise<PMap> {
+        Object.keys(this._plinks).forEach((key: ID) => {
+            let linkedTo = key
+            let linked = this._plinks[key]
+            promiseMap[linked].settle.fulfill = [...promiseMap[linkedTo].settle.fulfill]
+            promiseMap[linked].settle.reject = [...promiseMap[linkedTo].settle.reject]
         })
         return promiseMap
     }

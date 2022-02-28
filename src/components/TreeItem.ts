@@ -1,18 +1,18 @@
 import * as vscode from 'vscode';
 import { CallReferencesTreeProvider } from './CallReferencesTreeProvider';
-import { CoverageStatusType, COVERAGE_TYPE } from './constants';
-import Logger from './Logger';
+import { COMMAND_IDS, CoverageStatusType, COVERAGE_TYPE, ID, PInfo } from './constants';
 import { convertLocationToUriAndRange, trimLabel } from './utils';
 
 export enum TreeItemType {
     ASYNC_STMT = 'AsyncStatementNode',
     LOCATION = 'LocationNode',
+    LINK = 'LinkNode',
     REACTION = 'ReactionNode',
     DIRECTORY = 'DirectoryNode',
     FILE = 'FileNode',
 };
 
-const UNKNOWN_LOCATION_MESSAGE = '! Unidentified Location'
+const UNKNOWN_LOCATION_MESSAGE = '! Unknown Location'
 
 export enum TreeItemStatusEnum {
     Normal = 'Normal',
@@ -116,7 +116,7 @@ export class AsyncStmtTreeItem extends TreeItem {
         }
     }
 
-    static openCallLocation(resource: AsyncStmtTreeItem) {
+    static async openCallLocation(resource: AsyncStmtTreeItem) {
         const treeProvider = CallReferencesTreeProvider.getInstance()
         return treeProvider.refresh(resource.promiseInfo.refs)
     }
@@ -189,6 +189,21 @@ export class LocationTreeItem extends TreeItem {
             title: ""
         }
         this.iconPath = iconPath || new vscode.ThemeIcon('debug-step-into', new vscode.ThemeColor('icon.foreground'))
+        this.description = description
+    }
+}
+
+export class LinkTreeItem extends TreeItem {
+    constructor({label, children, linkId, description}: 
+        {label: string | vscode.TreeItemLabel, children?: TreeItem[], linkId: ID, description?: string} ) {
+            super({label, children, type: TreeItemType.LINK, location: ""});
+
+        this.command = {
+            command: COMMAND_IDS.PROMISE_TREE_REVEAL_ITEM,
+            arguments: [linkId, {select: false, focus: true}],
+            title: ""
+        }
+        this.iconPath = new vscode.ThemeIcon('link', new vscode.ThemeColor('icon.foreground'))
         this.description = description
     }
 }

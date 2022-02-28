@@ -39,19 +39,19 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 			// Called through vscode.postMessage({ type: 'colorSelected', value: color }); in the JS files when run in extension.
 			switch (data.type) {
 				case 'updateSearchQuery': {
-					PromiseTreeProvider.getInstance(this._extensionUri).updateConfig({query: data.value})
+					PromiseTreeProvider.getInstance().updateConfig({query: data.value})
 					break;
 				}
 				case 'updateCoverageType': {
-					PromiseTreeProvider.getInstance(this._extensionUri).updateConfig({coverageType: data.value})
+					PromiseTreeProvider.getInstance().updateConfig({coverageType: data.value})
 					break;
 				}
 				case 'updatePromiseTypes': {
-					PromiseTreeProvider.getInstance(this._extensionUri).updateConfig({promiseTypes: data.value})
+					PromiseTreeProvider.getInstance().updateConfig({promiseTypes: data.value})
 					break;
 				}
 				case 'clearTree': {
-					PromiseTreeProvider.getInstance(this._extensionUri).empty();
+					PromiseTreeProvider.getInstance().empty();
 					break;
 				}
 				case 'startAnalysis': {

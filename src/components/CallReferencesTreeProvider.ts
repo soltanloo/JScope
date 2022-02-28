@@ -8,9 +8,14 @@ export class CallReferencesTreeProvider implements vscode.TreeDataProvider<TreeI
     private static instance: CallReferencesTreeProvider | undefined;
     
     private data: TreeItem[];
+    private treeView: vscode.TreeView<TreeItem> | undefined;
     
     private constructor() {
-        this.data = []    
+        this.data = []
+    }
+
+    public setTreeView(treeView: vscode.TreeView<TreeItem>) {
+        this.treeView = treeView
     }
     
     public static getInstance(): CallReferencesTreeProvider {
@@ -28,6 +33,10 @@ export class CallReferencesTreeProvider implements vscode.TreeDataProvider<TreeI
     getTreeItem(element: TreeItem): vscode.TreeItem|Thenable<vscode.TreeItem> {
         return element;
     }
+
+    getParent(): vscode.ProviderResult<any>{
+        return null
+    }
     
     getChildren(element?: TreeItem|undefined): vscode.ProviderResult<TreeItem[]> {
         if (element === undefined) {
@@ -36,7 +45,7 @@ export class CallReferencesTreeProvider implements vscode.TreeDataProvider<TreeI
         return element.children;
     }
 
-    refresh(refs: {id: string, location: Location}[]) {
+    async refresh(refs: {id: string, location: Location}[]) {
         if(!refs.length) {
             this.data = [new EmptyMessageTreeItem({label: "No items here.", location: ""})]
         }
@@ -50,6 +59,7 @@ export class CallReferencesTreeProvider implements vscode.TreeDataProvider<TreeI
             })
         }
         this._onDidChangeTreeData.fire();
+        await this.treeView?.reveal(this.data[0], {select: false, focus: false})
     }
 
 }

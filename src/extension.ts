@@ -21,12 +21,23 @@ export function activate(context: vscode.ExtensionContext) {
   let workspaceDir: vscode.Uri;
   
   // PROMISE TREE PROVIDER 
-  const promiseTreeProvider = PromiseTreeProvider.getInstance(context.extensionUri)
-  context.subscriptions.push(vscode.window.registerTreeDataProvider(IDS.PROMISE_TREE_VIEW, promiseTreeProvider));
+  // context.extensionUri
+  const promiseTreeProvider = PromiseTreeProvider.getInstance()
+
+  const PromiseTreeView = vscode.window.createTreeView(IDS.PROMISE_TREE_VIEW, {
+    treeDataProvider: promiseTreeProvider
+  });
+  promiseTreeProvider.setTreeView(PromiseTreeView)
+  context.subscriptions.push(PromiseTreeView)
 
   // References tree provider 
   const callReferencesTreeProvider = CallReferencesTreeProvider.getInstance()
-  context.subscriptions.push(vscode.window.registerTreeDataProvider(IDS.CALL_REFERENCES_TREE_VIEW, callReferencesTreeProvider));
+  
+  const CallReferenceTreeView = vscode.window.createTreeView(IDS.CALL_REFERENCES_TREE_VIEW, {
+    treeDataProvider: callReferencesTreeProvider
+  })
+  callReferencesTreeProvider.setTreeView(CallReferenceTreeView)
+  context.subscriptions.push(CallReferenceTreeView);
   
   
   

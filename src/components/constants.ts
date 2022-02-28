@@ -17,6 +17,7 @@ export const COMMAND_IDS = {
     RUN_COVERAGE: 'cap.run-coverage',
     PROMISE_TREE_VIEW: 'cap-tree-view',
     PROMISE_TREE_CONFIG_WEBVIEW: 'cap-config-webview',
+    PROMISE_TREE_REVEAL_ITEM: 'promise-tree.reveal',
     CONFIG__UPDATE_CONFIG: 'cap-config.update-config',
     
     MENU__SHOW_ALL_ACTIONS: 'right-click-menu.show-all-executions',
@@ -80,15 +81,17 @@ export type CoverageStatusType = {
     execute: {fulfill: null | boolean, reject: null | boolean}
 }
 
+export type ID = string
 export type Location = `${string}:${string}:${string}:${string}:${string}`
 export type Pid = `p${number}`
 
 export type PInfo = {
-    id: string,
+    id: ID,
     location: Location,
     iid: number,
-    refs: {id: string, location: Location}[],
+    refs: {id: ID, location: Location}[],
     pids: Pid[],
+    links: {id: ID, location: Location}[],
     parent: Pid,
     _parents: Pid[], // For debugging purposes
     type: P_TYPE,
@@ -107,6 +110,6 @@ export type ReactionLogObj = {
     wrapperFid: string, 
     tag: COVERAGE_TYPE, 
     reaction: PROMISE_OUTCOME, 
-    value: string, 
+    value: any, 
     path: string
 }

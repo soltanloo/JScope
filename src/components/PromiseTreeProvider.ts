@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
-import { CoverageStatusType, COVERAGE_TYPE } from './constants';
+import { COMMAND_IDS, CoverageStatusType, COVERAGE_TYPE, ID, Location, PInfo, PMap } from './constants';
 import { Coverage } from './Coverage';
 import CoverageHelper from './CoverageHelper';
 import CoverageReportProvider from './CoverageReportProvider';
 import Logger from './Logger';
-import { AsyncStmtTreeItem, LocationTreeItem, ReactionTreeItem, TreeItem, TreeItemType } from './TreeItem';
+import { AsyncStmtTreeItem, LinkTreeItem, LocationTreeItem, ReactionTreeItem, TreeItem, TreeItemType } from './TreeItem';
 
 /**
  * - Creates a tree containing data related to Async Items in a project.
@@ -16,14 +16,22 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
     private static instance: PromiseTreeProvider | undefined;
     
-    private _extensionUri: vscode.Uri;
+    private treeView: vscode.TreeView<TreeItem> | undefined;
     private _config: {query?: string, promiseTypes: string[], coverageType: COVERAGE_TYPE}
         = {promiseTypes: ['all'], coverageType: COVERAGE_TYPE.settle}
     
-    private constructor(extensionUri: vscode.Uri) {
+    private constructor() {
         this.data = []
-        this._extensionUri = extensionUri
         this.cov = new Coverage()
+        vscode.commands.registerCommand(COMMAND_IDS.PROMISE_TREE_REVEAL_ITEM, async (id, config) => {
+            let element = this.getElementById(id)
+            if(element)
+                await this.treeView?.reveal(element, config)
+        });
+    }
+
+    public setTreeView(treeView: vscode.TreeView<TreeItem>) {
+        this.treeView = treeView
     }
 
     public static destroyExisting() {
@@ -31,9 +39,9 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
     }
     
-    public static getInstance(extensionUri: vscode.Uri): PromiseTreeProvider {
+    public static getInstance(): PromiseTreeProvider {
         if (!PromiseTreeProvider.instance) {
-            PromiseTreeProvider.instance = new PromiseTreeProvider(extensionUri);
+            PromiseTreeProvider.instance = new PromiseTreeProvider();
         }
 
         return PromiseTreeProvider.instance;
@@ -47,17 +55,17 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     _workspaceDir: vscode.Uri | undefined;
     private cov: Coverage;
     
-    private async _updateTreeData() {
-        Logger.log('> Updating tree data with new promiseMap...')
-        const promiseMap = await this.cov.getPromiseMap(this._config) // TODO: Handle a case where the log file may not exist.
-        Logger.log(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
+    private async _updateTreeData(clear: boolean = false) {
+        Logger.report('> Updating tree data with new promiseMap...')
+        const promiseMap = clear ? {} : await this.cov.getPromiseMap(this._config) // TODO: Handle a case where the log file may not exist.
+        Logger.report(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
         // Logger.log(`> Promise map created. Map: ${JSON.stringify(promiseMap, null, 2)}`)
-        const functionsMap = await this.cov.getFunctionsMap()
+        const functionsMap = clear ? {} : await this.cov.getFunctionsMap()
         Logger.log(`> Function map created. Keys: ${Object.keys(functionsMap).length}`)
-        const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
-        Logger.log(`----------`)
-        Logger.log(`> Coverage report:`)
-        Logger.log(`> ${coverageReport}`)
+        const coverageReport = clear ? "N/A" : CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
+        Logger.report(`----------`)
+        Logger.report(`> Coverage report:`)
+        Logger.report(`> ${coverageReport}`)
         Logger.log(`----------`)
         // Logger.log(`> PromiseMap Size: ${Object.keys(promiseMap).length}`)
         Logger.log(`> PromiseMap: ${JSON.stringify(promiseMap, null, 2)}`)
@@ -94,12 +102,12 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             })
 
         })
-        Logger.log('> Tree data updated.')
+        Logger.report('> Tree data updated.')
         this._onDidChangeTreeData.fire();
     }
 
     refresh(projectPath: string, projectName: string, logUri?: vscode.Uri) {
-        Logger.log(`> refreshing tree... ${logUri?.path}`)
+        Logger.report(`> refreshing tree... ${logUri?.path}`)
         this.cov = new Coverage(logUri)
         this.cov.setProjectInfo(projectPath, projectName)
         this._updateTreeData();
@@ -107,6 +115,15 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     
     getTreeItem(element: TreeItem): vscode.TreeItem|Thenable<vscode.TreeItem> {
         return element;
+    }
+    
+    getParent(): vscode.ProviderResult<any>{
+        return null
+    }
+
+    getElementById(id: ID): TreeItem | undefined {
+        // @ts-ignore
+        return this.data.find((item: TreeItem) => item.promiseInfo?.id === id)
     }
     
     getChildren(element?: TreeItem|undefined): vscode.ProviderResult<TreeItem[]> {
@@ -133,10 +150,10 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     empty() {
         Logger.log("Empty was called on the tree.")
         this.cov.clear();
-        this._updateTreeData()
+        this._updateTreeData(true)
     }
 
-    private createChildrenForTreeItem(pInfo: any, functionsMap: any): TreeItem[] {
+    private createChildrenForTreeItem(pInfo: PInfo, functionsMap: any): TreeItem[] {
         // Logger.log(`pInfo: ${JSON.stringify(pInfo)}`)
 
         // Def location
@@ -156,11 +173,20 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         
         const coverageType = this._getCoverageType()
         
-        
+        // Links
+        let links = pInfo.links.map((item: {id: ID, location: Location}): LinkTreeItem => {
+            let linkTreeItem = new LinkTreeItem({
+                label: `Linked to ${TreeItem.createLabelFromLocation(item.location)}`, 
+                linkId: item.id,
+            })
+            return linkTreeItem
+        }).filter(Boolean)
+
         // resolve reactions location
-        let fulfills = []
+        let fulfills: ReactionTreeItem[] = []
         let fulfillGroups = new Map<String, Boolean>() // group reactions based on value+location as key.
-        fulfills = pInfo[coverageType].fulfill.map((item: any) => {
+        // @ts-ignore
+        fulfills = pInfo[coverageType].fulfill.map((item: any): ReactionTreeItem | null => {
             // TODO: Construct labels based on a defined structure.
             
             let loc = ReactionTreeItem.getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
@@ -182,9 +208,10 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         
 
         // reject reactions location
-        let rejects = []
+        let rejects: ReactionTreeItem[] = []
         let rejectGroups = new Map<String, Boolean>() // group reactions based on value+location as key.
-        rejects = pInfo[coverageType].reject.map((item: any) => {
+        // @ts-ignore
+        rejects = pInfo[coverageType].reject.map((item: any): ReactionTreeItem | null => {
             
             let loc = ReactionTreeItem.getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
             
@@ -207,6 +234,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         return [
             // defTreeItem, 
             // useTreeItem, 
+            ...links,
             ...fulfills, 
             ...rejects
         ]
