@@ -14,8 +14,8 @@ export class Coverage {
     private _logUri: vscode.Uri
     private _logs: any[]
     private _promiseMap: PMap
-    private _pidToIdMap: {[pid: Pid]: string} // used to reduce search time from O(n) to O(1) when adding reactions. Filled while adding promises.
-    private _plinks: {[id: ID]: ID} // used to show links, A -> B means that B is linked to A, so A will decide the fate of B.
+    private _pidToIdMap: {[pid: string/*PID*/]: string} // used to reduce search time from O(n) to O(1) when adding reactions. Filled while adding promises.
+    private _plinks: {[id: string/*ID*/]: ID} // used to show links, A -> B means that B is linked to A, so A will decide the fate of B.
     private _functionsMap: any
     private _projectPath: string
     private _projectName: string
