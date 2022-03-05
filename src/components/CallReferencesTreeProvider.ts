@@ -50,13 +50,17 @@ export class CallReferencesTreeProvider implements vscode.TreeDataProvider<TreeI
             this.data = [new EmptyMessageTreeItem({label: "No items here.", location: ""})]
         }
         else {
-            this.data = refs.map((ref: {id: string, location: Location}) => {
-                return new CallReferenceTreeItem({
+            let seenBefore = new Set<Location>()
+            let res: TreeItem[] = []
+            this.data = refs.reduce((prev, ref: {id: string, location: Location}) => {
+                if(seenBefore.has(ref.location)) return prev
+                seenBefore.add(ref.location)
+                return [...prev, new CallReferenceTreeItem({
                     label: TreeItem.createLabelFromLocation(ref.location), 
                     location: ref.location,
                     extra: `${ref.id}`,
-                })
-            })
+                })]
+            }, res)
         }
         this._onDidChangeTreeData.fire();
         await this.treeView?.reveal(this.data[0], {select: false, focus: false})
