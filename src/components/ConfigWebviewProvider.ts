@@ -110,8 +110,11 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 			<title></title>
 		</head>
 		<body>
-		
-			<input type="search" placeholder="search in tree..." name="search" id="search">
+
+			<button class="start">New Coverage</button>
+			<button class="clear-tree">Clear Tree</button>
+			
+			<hr>
 			
 			<p>Choose Coverage Type:</p>
 			<div><input type="radio" id="settle" name="coverageType" value="settle" checked>
@@ -135,16 +138,14 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 			<div class="promise-type-other hidden"><input type="checkbox" id="PromiseResolve" name="promiseType" value="PromiseResolve,PromiseReject">
 			<label for="PromiseResolve">Promise.resolve/reject</label></div>
 			<div class="promise-type-other hidden"><input type="checkbox" id="PromiseAll" name="promiseType" value="PromiseAll,PromiseRace">
-			<label for="PromiseAll">Promise.race/all</label></div>
+			<label for="PromiseAll">Promise.race/all/any/allSettled</label></div>
 			<div class="promise-type-other hidden"><input type="checkbox" id="AsyncFunction" name="promiseType" value="AsyncFunction">
 			<label for="AsyncFunction">Async Function</label></div>    
-			<div class="promise-type-other hidden"><input type="checkbox" id="Await" name="promiseType" value="Await">
-			<label for="Await">Await Statement</label></div>    
-			<hr>
-			
-			<button class="start">New Coverage</button>
-			<button class="clear-tree">Clear Tree</button>
-		
+
+			<!--
+			<input type="search" placeholder="search in tree..." name="search" style="display: none;" id="search">
+			-->
+
 			<script nonce="${nonce}" src="${scriptUri}"></script>
 			<!-- <script nonce="${nonce}" src="./config-view.js"></script> -->
 		</body>

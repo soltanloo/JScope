@@ -17,11 +17,11 @@
         vscode.postMessage({ type: 'startAnalysis', value: {} });
     });
 
-    function _updateSearchQuery() {
-        vscode.postMessage({ type: 'updateSearchQuery', value: this.value });
-    }
-    document.querySelector('#search').addEventListener('input', _updateSearchQuery)
-    document.querySelector('#search').addEventListener('propertychange', _updateSearchQuery)
+    // function _updateSearchQuery() {
+    //     vscode.postMessage({ type: 'updateSearchQuery', value: this.value });
+    // }
+    // document.querySelector('#search').addEventListener('input', _updateSearchQuery)
+    // document.querySelector('#search').addEventListener('propertychange', _updateSearchQuery)
 
 
     document.querySelectorAll("input[name='coverageType']").forEach(item => {
