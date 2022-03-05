@@ -60,14 +60,14 @@ export enum PROMISE_OUTCOME {
     reject = 'reject'
 }
 
-export const LOG_TAGS = {
-    NEW_PROMISE: 'new-promise',
-    SETTLEMENT: 'settle',
-    REGISTER: 'register',
-    EXECUTE: 'execute',
-    INVOKE_FUN: 'function-invoke',
-    TRY_CATCH: 'try-catch',
-    AWAIT: 'await',
+export enum LOG_TAGS {
+    NEW_PROMISE = 'new-promise',
+    SETTLEMENT = 'settle',
+    REGISTER = 'register',
+    EXECUTE = 'execute',
+    INVOKE_FUN = 'function-invoke',
+    TRY_CATCH = 'try-catch',
+    AWAIT = 'await',
   }
 
 export enum CoverageGroupByEnum {
@@ -108,8 +108,15 @@ export type PMap = { [id: string]: PInfo; }
 export type ReactionLogObj = {
     fid: string, 
     wrapperFid: string, 
-    tag: COVERAGE_TYPE, 
+    tag: LOG_TAGS,
+    location?: Location,
     reaction: PROMISE_OUTCOME, 
     value: any, 
     path: string
+}
+
+export type TryCatchLogVal = {
+    iid: number,
+    location: Location,
+    wasExceptionalCtrlFlowObserved: boolean
 }

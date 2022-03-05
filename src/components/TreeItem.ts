@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { CallReferencesTreeProvider } from './CallReferencesTreeProvider';
-import { COMMAND_IDS, CoverageStatusType, COVERAGE_TYPE, ID, PInfo } from './constants';
+import { COMMAND_IDS, CoverageStatusType, COVERAGE_TYPE, ID, LOG_TAGS, PInfo, ReactionLogObj } from './constants';
 import { convertLocationToUriAndRange, trimLabel } from './utils';
 
 export enum TreeItemType {
@@ -160,8 +160,11 @@ export class ReactionTreeItem extends TreeItem {
         // return `${JSON.stringify(value)}:${loc}`
     }
     
-    static getReactionFunctionLocation(pInfo: any, coverageType: COVERAGE_TYPE, reaction: any, functionsMap: any) {
+    static getReactionFunctionLocation(pInfo: any, coverageType: COVERAGE_TYPE, reaction: ReactionLogObj, functionsMap: any) {
         // Logger.log(`ctype: ${coverageType}, reaction: ${reaction.reaction}, fid: ${reaction.fid}, wrapperFid: ${reaction.wrapperFid}`)
+        if([LOG_TAGS.AWAIT, LOG_TAGS.TRY_CATCH].includes(reaction.tag)) {
+            return reaction.location
+        }
         if(['register'].includes(coverageType))
             return functionsMap[reaction.wrapperFid]?.location
         return functionsMap[reaction.fid]?.location

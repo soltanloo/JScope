@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid, ID } from './constants'
+import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid, ID, COVERAGE_TYPE, TryCatchLogVal } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
 import { isObjectEmpty, objectFilter } from './utils'
@@ -129,10 +129,10 @@ export class Coverage {
             Logger.log(`pidToId Map: ${JSON.stringify(this._pidToIdMap, null, 2)}`)
             promiseMap = await this._addReactions(this._logs, promiseMap)
             Logger.log(`links: ${JSON.stringify(this._plinks, null, 2)}`)
+            promiseMap = await this._handleAwaits(this._logs, promiseMap)
             promiseMap = await this._handleLinkedPromiseSettlements(promiseMap)
-            // let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, res.cidToIdMap) // TODO:
-            // promiseMap = await this._handleTryCatchBlocks(this._logs, promiseMap)
-            // promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap) // TODO:
+            let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, this._pidToIdMap)
+            promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap)
             this._promiseMap = promiseMap
         }
         
@@ -305,6 +305,7 @@ export class Coverage {
     private async _addReactions(logs: any[], promiseMap: PMap) {
         logs.forEach(log => {
             // Used to keep the same structure for all reactions.
+            let logReactionTag: COVERAGE_TYPE = log.tag
             let logVal: ReactionLogObj = {
                 fid: log.fid, 
                 wrapperFid: log.wrapperFid, 
@@ -317,7 +318,7 @@ export class Coverage {
             if ([LOG_TAGS.REGISTER, LOG_TAGS.EXECUTE].includes(log.tag)) { 
                 let id = this.getIdByPid(log.p.__cid)
                 if (promiseMap.hasOwnProperty(id)) {
-                    promiseMap[id][logVal.tag][logVal.reaction].push(logVal)
+                    promiseMap[id][logReactionTag][logVal.reaction].push(logVal)
                     let curr_cid = log.p.__cid
                     let prefix = ''
                     let curr_key = this.getIdByPid(curr_cid)
@@ -326,7 +327,7 @@ export class Coverage {
                         curr_cid = promiseMap[curr_key].parent
                         curr_key = this.getIdByPid(curr_cid)
                         if (promiseMap[curr_key]) {
-                            promiseMap[curr_key][logVal.tag][logVal.reaction].push({...logVal, path: `${prefix}${log.fid}`})
+                            promiseMap[curr_key][logReactionTag][logVal.reaction].push({...logVal, path: `${prefix}${log.fid}`})
                         }
                     }
                 } else {
@@ -348,7 +349,7 @@ export class Coverage {
                     }
                     else {
                         // If not a promise linking, then settlement takes effect
-                        promiseMap[this.getIdByPid(pid)][logVal.tag][logVal.reaction].push(logVal)
+                        promiseMap[this.getIdByPid(pid)][logReactionTag][logVal.reaction].push(logVal)
                     }
                 } else {
                     // console.error(`trying to access a non-existing promise with cid=${log.p.__cid}`)
@@ -368,8 +369,8 @@ export class Coverage {
         return promiseMap
     }
 
-    private async _handleTryCatchBlocks(logs: any[], promiseMap: any) {
-        const tryCatchBlocksMap = new Map()
+    private async _handleAwaits(logs: any[], promiseMap: any): Promise<any> {
+        const tryCatchBlocksMap = new Map<number, TryCatchLogVal>()
         logs.forEach((log: any) => {
             if ([LOG_TAGS.TRY_CATCH].includes(log.tag)) {
                 tryCatchBlocksMap.set(log.iid, {
@@ -379,20 +380,67 @@ export class Coverage {
                 })
             }
         })
-        let awaitsIterator = CoverageHelper.filterForMapValues(
-            Object.values(promiseMap),
-            (val: any) => val.type === P_TYPE.Await
-        )
-        for (let awaitData of awaitsIterator) {
-            const isInsideSomeTryCatchBlock = Array.from(tryCatchBlocksMap.values()).some(
-                (tryBlock) => CoverageHelper.isInsideBlock(awaitData.location, tryBlock.location)
-            )
-            if (isInsideSomeTryCatchBlock) {
-                console.log('isInside a try/catch block', awaitData, isInsideSomeTryCatchBlock)
-                promiseMap[awaitData.cid].register.reject.push(isInsideSomeTryCatchBlock)
+        
+        logs.forEach(log => {
+            if ([LOG_TAGS.AWAIT].includes(log.tag)) { 
+                if(!(log.result && log.result.__cid)) return // not awaiting a promise val.
+                
+                let logVal: ReactionLogObj = {
+                    fid: log.fid,
+                    wrapperFid: log.wrapperFid, 
+                    location: log.location,
+                    tag: log.tag, // Use this to later address this type.
+                    reaction: PROMISE_OUTCOME.fulfill, 
+                    value: log.result, 
+                    path: `${log.iid}`
+                }
+
+                let id = this.getIdByPid(log.result.__cid)
+                if (promiseMap.hasOwnProperty(id)) {
+                    const isInsideSomeTryCatchBlock = Array.from(tryCatchBlocksMap.values()).find(
+                        (tryBlock) => CoverageHelper.isInsideBlock(log.location, tryBlock.location)
+                    )
+
+                    this._addAwaitToReactionsForPromise(promiseMap, id, logVal, isInsideSomeTryCatchBlock)
+                    
+                    let curr_cid = log.result.__cid
+                    let prefix = ''
+                    let curr_key = this.getIdByPid(curr_cid)
+                    while (promiseMap.hasOwnProperty(curr_key) && promiseMap[curr_key].parent) {
+                        prefix = `${curr_key}>${prefix}`
+                        curr_cid = promiseMap[curr_key].parent
+                        curr_key = this.getIdByPid(curr_cid)
+                        if (promiseMap[curr_key]) {
+                            this._addAwaitToReactionsForPromise(promiseMap, id, logVal, isInsideSomeTryCatchBlock, prefix)
+                        }
+                    }
+                } else {
+                    // console.error(`trying to access a non-existing promise with cid=${log.p.__cid}`)
+                }
+            }
+        })
+        return promiseMap
+    }
+
+    private _addAwaitToReactionsForPromise(promiseMap: PMap, id: ID, logVal: ReactionLogObj, isInsideSomeTryCatchBlock: TryCatchLogVal | undefined, pathPrefix: string = '') {
+        promiseMap[id].register.fulfill.push({...logVal, path: `${pathPrefix}${logVal.path}`})
+        if(promiseMap[id].settle.fulfill.length || promiseMap[id].settle.reject.length) {
+            promiseMap[id].execute.fulfill.push({...logVal, path: `${pathPrefix}${logVal.path}`})
+        }
+        if (isInsideSomeTryCatchBlock) {
+            Logger.log(`isInside a try/catch block ${JSON.stringify(logVal)}, ${JSON.stringify(isInsideSomeTryCatchBlock)}`)
+            let tryCatchLogVal: ReactionLogObj = {
+                ...logVal, 
+                tag: LOG_TAGS.TRY_CATCH,
+                location: isInsideSomeTryCatchBlock.location,
+                reaction: PROMISE_OUTCOME.reject, 
+                path: `${pathPrefix}${isInsideSomeTryCatchBlock.iid}`
+            }
+            promiseMap[id].register.reject.push(tryCatchLogVal)
+            if(isInsideSomeTryCatchBlock.wasExceptionalCtrlFlowObserved) {
+                promiseMap[id].execute.reject.push(tryCatchLogVal)
             }
         }
-        return promiseMap
     }
 
     // To handle settlements for special cases in chains.

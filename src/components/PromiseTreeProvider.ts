@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { COMMAND_IDS, CoverageStatusType, COVERAGE_TYPE, ID, Location, PInfo, PMap } from './constants';
+import { COMMAND_IDS, CoverageStatusType, COVERAGE_TYPE, ID, Location, PInfo, PMap, ReactionLogObj } from './constants';
 import { Coverage } from './Coverage';
 import CoverageHelper from './CoverageHelper';
 import CoverageReportProvider from './CoverageReportProvider';
@@ -186,7 +186,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         let fulfills: ReactionTreeItem[] = []
         let fulfillGroups = new Map<String, Boolean>() // group reactions based on value+location as key.
         // @ts-ignore
-        fulfills = pInfo[coverageType].fulfill.map((item: any): ReactionTreeItem | null => {
+        fulfills = pInfo[coverageType].fulfill.map((item: ReactionLogObj): ReactionTreeItem | null => {
             // TODO: Construct labels based on a defined structure.
             
             let loc = ReactionTreeItem.getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
@@ -211,7 +211,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
         let rejects: ReactionTreeItem[] = []
         let rejectGroups = new Map<String, Boolean>() // group reactions based on value+location as key.
         // @ts-ignore
-        rejects = pInfo[coverageType].reject.map((item: any): ReactionTreeItem | null => {
+        rejects = pInfo[coverageType].reject.map((item: ReactionLogObj): ReactionTreeItem | null => {
             
             let loc = ReactionTreeItem.getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
             
