@@ -129,10 +129,13 @@ export class Coverage {
             Logger.log(`pidToId Map: ${JSON.stringify(this._pidToIdMap, null, 2)}`)
             promiseMap = await this._addReactions(this._logs, promiseMap)
             Logger.log(`links: ${JSON.stringify(this._plinks, null, 2)}`)
-            promiseMap = await this._handleAwaits(this._logs, promiseMap)
-            promiseMap = await this._handleLinkedPromiseSettlements(promiseMap)
+            // promiseMap = await this._addPromiseThenLinks(promiseMap, this._pidToIdMap)
             let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, this._pidToIdMap)
             promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap)
+            promiseMap = await this._handleAsyncFunctionSettlements(this._logs, promiseMap)
+            promiseMap = await this._handleLinkedPromiseSettlements(promiseMap)
+            promiseMap = await this._handleAwaits(this._logs, promiseMap)
+            
             this._promiseMap = promiseMap
         }
         
@@ -359,6 +362,10 @@ export class Coverage {
         return promiseMap
     }
 
+    // private async _addPromiseThenLinks(promiseMap: PMap, _pidToIdMap: any): Promise<PMap> {
+    //     return promiseMap
+    // }
+
     private async _handleLinkedPromiseSettlements(promiseMap: PMap): Promise<PMap> {
         Object.keys(this._plinks).forEach((key: ID) => {
             let linkedTo = key
@@ -382,7 +389,7 @@ export class Coverage {
         })
         
         logs.forEach(log => {
-            if ([LOG_TAGS.AWAIT].includes(log.tag)) { 
+            if ([LOG_TAGS.AWAIT].includes(log.tag) || [LOG_TAGS.AWAIT].includes(log.warn)) { 
                 if(!(log.result && log.result.__cid)) return // not awaiting a promise val.
                 
                 let logVal: ReactionLogObj = {
@@ -463,11 +470,42 @@ export class Coverage {
                 // @ts-ignore
                 fidToPromiseMap.get(log.fid).map((key: string) => {
                     Logger.log(`adding settle reaction to this key: ${key} : ${JSON.stringify(promiseMap[key])}`)
-                    if(isObjectEmpty(log.exceptionVal))
+                    if(isObjectEmpty(log.exception))
                         promiseMap[key]['settle'][PROMISE_OUTCOME.fulfill].push(logVal)
                     else
                         promiseMap[key]['settle'][PROMISE_OUTCOME.reject].push(logVal)
+
+                    if(log.returnVal.hasOwnProperty('__cid') && 
+                        !promiseMap[key].links.some((v: any) => v.id === this.getIdByPid(log.returnVal.__cid))) {
+                        let linkedToId = this.getIdByPid(log.returnVal.__cid)
+                        if(linkedToId) {
+                            promiseMap[key].links.push({id: linkedToId, location: promiseMap[linkedToId]?.location || ""})
+                            this._plinks[linkedToId] = key
+                        }
+                    }
                 })    
+            }
+        })
+        return promiseMap
+    }
+
+    private async _handleAsyncFunctionSettlements(logs: any[], promiseMap: PMap) {
+        logs.forEach((log: any) => {
+            if ([LOG_TAGS.ASYNC_FUNC_EXIT].includes(log.tag)) {
+                if(!log.result.__cid) return 
+
+                let logVal: ReactionLogObj = {
+                    fid: log.iid, 
+                    wrapperFid: log.wrapperFid, 
+                    tag: LOG_TAGS.SETTLEMENT, 
+                    reaction: log.reaction, 
+                    location: log.location,
+                    value: log.result, 
+                    path: `${log.iid}`
+                }
+                let key = this.getIdByPid(log.result.__cid)
+                // FIXME: Here we cannot detect if throws or just fulfills.
+                promiseMap[key].settle.fulfill.push(logVal)
             }
         })
         return promiseMap
@@ -487,6 +525,7 @@ export class Coverage {
             
             if(!reaction) return;
             let parentInfo = promiseMap[cidToIdMap[pInfo.parent]]
+            if(!parentInfo) return;
             parentInfo['register'][reaction].forEach((logVal: ReactionLogObj) => {
                 // @ts-ignore
                 let prev = fidToPromiseMap.get(logVal.fid)

@@ -4,7 +4,7 @@ import { Coverage } from './Coverage';
 import CoverageHelper from './CoverageHelper';
 import CoverageReportProvider from './CoverageReportProvider';
 import Logger from './Logger';
-import { AsyncStmtTreeItem, LinkTreeItem, LocationTreeItem, ReactionTreeItem, TreeItem, TreeItemType } from './TreeItem';
+import { AsyncStmtTreeItem, LinkTreeItem, ReactionTreeItem, TreeItem } from './TreeItem';
 
 /**
  * - Creates a tree containing data related to Async Items in a project.
@@ -94,7 +94,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             return new AsyncStmtTreeItem({
                 label: label, 
                 location: loc, 
-                children: this.createChildrenForTreeItem(val, functionsMap),
+                children: [], // this.createChildrenForTreeItem(val, functionsMap),
                 promiseInfo: val,
                 iconPath: this._getCoverageIconForPromise(coverage),
                 coverageStatus: coverage,
@@ -102,9 +102,16 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             })
 
         })
+        // this.data = [new EmptyMessageTreeItem({
+        //     label: "Tip: Hover over uncovered items for more details.", 
+        //     location: '', 
+        //     // tooltip: "Tip1: Hover over uncovered items for more details."
+        //             //  + "\n  \nTip2: Right click on items for more actions."
+        // }), ...this.data]
         Logger.report('> Tree data updated.')
         this._onDidChangeTreeData.fire();
     }
+    
 
     refresh(projectPath: string, projectName: string, logUri?: vscode.Uri) {
         Logger.report(`> refreshing tree... ${logUri?.path}`)
@@ -192,6 +199,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             let loc = ReactionTreeItem.getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
             
             let itemKey = ReactionTreeItem.createLabel(item.value, loc)
+            if(!loc) return null
             if(fulfillGroups.has(itemKey)) return null
             fulfillGroups.set(itemKey, true)
             
@@ -216,6 +224,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
             let loc = ReactionTreeItem.getReactionFunctionLocation(pInfo, coverageType, item, functionsMap)
             
             let itemKey = ReactionTreeItem.createLabel(item.value, loc)
+            if(!loc) return null
             if(rejectGroups.has(itemKey)) return null
             rejectGroups.set(itemKey, true)
             

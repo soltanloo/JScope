@@ -66,6 +66,7 @@ export enum LOG_TAGS {
     REGISTER = 'register',
     EXECUTE = 'execute',
     INVOKE_FUN = 'function-invoke',
+    ASYNC_FUNC_EXIT = 'async-function-exit',
     TRY_CATCH = 'try-catch',
     AWAIT = 'await',
   }

@@ -138,7 +138,7 @@ ${Object.keys(types)
             coverageObj.setResTot += +(![P_TYPE.PromiseReject].includes(val.type))
             coverageObj.setRejTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(val.type))
 
-            coverageObj.regResCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type) && !!val['register']['fulfill'].length)
+            coverageObj.regResCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type) && !!val['register']['fulfill'].length) // TODO: Handle registration for linked promises in here!
             coverageObj.regRejCnt += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type) && !!val['register']['reject'].length)
             coverageObj.regResTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(val.type))
             coverageObj.regRejTot += +(![P_TYPE.PromiseCatch, P_TYPE.PromiseReject].includes(val.type))

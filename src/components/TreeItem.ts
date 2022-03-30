@@ -93,7 +93,8 @@ export class AsyncStmtTreeItem extends TreeItem {
     protected _setTooltip(): void {
         if(this.status === TreeItemStatusEnum.Normal) {
             // let codeDescription = trimLabel(this.promiseInfo['code'])
-            this.tooltip = new vscode.MarkdownString(`${this.promiseInfo.id}`);
+            // this.tooltip = new vscode.MarkdownString(`${this.promiseInfo.id}`); // For debugging.
+            this.tooltip = new vscode.MarkdownString(``);
             let cov = this.coverageStatus[this.coverageType]
             // @ts-ignore
             Object.keys(cov).filter((k: string) => cov[k] === false).forEach(k => {
@@ -108,11 +109,11 @@ export class AsyncStmtTreeItem extends TreeItem {
     private _getTooltipMessageForReaction(reaction: string, coverageType: COVERAGE_TYPE): string {
         let newline = `  \n`
         if (coverageType === COVERAGE_TYPE.settle) {
-            return `${newline}* This object is never **${reaction}ed** in any of the test-cases.`
+            return `${newline}* Promise never **${reaction}ed**.`
         } else if (coverageType === COVERAGE_TYPE.register) {
-            return `${newline}* There is no **${reaction}** reaction registered to this object.`
+            return `${newline}* No **${reaction}** reaction registered.`
         }  else { // if (coverageType === COVERAGE_TYPE.register) {
-            return `${newline}* No execution of **${reaction}** reaction observed for this object.`
+            return `${newline}* No **${reaction}** reaction executed.`
         }
     }
 
@@ -162,7 +163,7 @@ export class ReactionTreeItem extends TreeItem {
     
     static getReactionFunctionLocation(pInfo: any, coverageType: COVERAGE_TYPE, reaction: ReactionLogObj, functionsMap: any) {
         // Logger.log(`ctype: ${coverageType}, reaction: ${reaction.reaction}, fid: ${reaction.fid}, wrapperFid: ${reaction.wrapperFid}`)
-        if([LOG_TAGS.AWAIT, LOG_TAGS.TRY_CATCH].includes(reaction.tag)) {
+        if(reaction.location) {
             return reaction.location
         }
         if(['register'].includes(coverageType))
@@ -230,11 +231,11 @@ export class CallReferenceTreeItem extends TreeItem {
 
 export class EmptyMessageTreeItem extends TreeItem {
 
-    constructor({label, children, type, location}: 
-        {label: string | vscode.TreeItemLabel, children?: TreeItem[], type?: TreeItemType, location: string} ) {
+    constructor({label, children, type, location, tooltip}: 
+        {label: string | vscode.TreeItemLabel, children?: TreeItem[], type?: TreeItemType, location: string, tooltip?: string} ) {
         super({label, location: location});
         this.command = undefined
+        this.tooltip = tooltip ? tooltip : label.toString()
     }
 
-    protected _setTooltip(): void {}
 }

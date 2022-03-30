@@ -12,7 +12,7 @@ import { CallReferencesTreeProvider } from './components/CallReferencesTreeProvi
 
 
 export function activate(context: vscode.ExtensionContext) {
-  const _channel = vscode.window.createOutputChannel("CAP");
+  const _channel = vscode.window.createOutputChannel("JScope");
   _channel.show()
   Logger.init(_channel)
   context.subscriptions.push(_channel)

@@ -33,11 +33,11 @@
 		"commands": [
 			{
 				"command": "cap.run-coverage",
-				"title": "CAP: Run Promise Coverage"
+				"title": "JScope:Run Promise Coverage"
 			},
 			{
 				"command": "cap-config.update-config",
-				"category": "CAP: Update Config",
+				"category": "JScope: Update Config",
 				"title": "Update Promise Coverage Configurations",
 				"icon": "$(clear-all)"
 			},

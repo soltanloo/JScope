@@ -120,11 +120,12 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 			<div><input type="radio" id="settle" name="coverageType" value="settle" checked>
 			<label for="settle">Settlement coverage</label></div>
 			<div><input type="radio" id="register" name="coverageType" value="register">
-			<label for="register">Registration coverage</label></div>
+			<label for="register">Reaction Registration coverage</label></div>
 			<div><input type="radio" id="execute" name="coverageType" value="execute">
-			<label for="execute">Execution coverage</label></div>
-			<hr>
+			<label for="execute">Reaction Execution coverage</label></div>
 			
+			<!--
+			<hr>
 			<p>Select Promise Types:</p>
 			<div><input type="checkbox" id="all" name="promiseType" value="all" checked>
 			<label for="all">All</label></div>
@@ -141,6 +142,7 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 			<label for="PromiseAll">Promise.race/all/any/allSettled</label></div>
 			<div class="promise-type-other hidden"><input type="checkbox" id="AsyncFunction" name="promiseType" value="AsyncFunction">
 			<label for="AsyncFunction">Async Function</label></div>    
+			-->
 
 			<!--
 			<input type="search" placeholder="search in tree..." name="search" style="display: none;" id="search">
