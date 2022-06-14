@@ -9,12 +9,15 @@
 
     const oldState = vscode.getState() || { colors: [] };
 
-    document.querySelector('.clear-tree').addEventListener('click', () => {
-        vscode.postMessage({ type: 'clearTree', value: {} });
-    });
+    // document.querySelector('.clear-tree').addEventListener('click', () => {
+    //     vscode.postMessage({ type: 'clearTree', value: {} });
+    // });
 
     document.querySelector('.start').addEventListener('click', () => {
         vscode.postMessage({ type: 'startAnalysis', value: {} });
+    });
+    document.querySelector('.annotate').addEventListener('click', () => {
+        vscode.postMessage({ type: 'annotate', value: {} });
     });
 
     // function _updateSearchQuery() {

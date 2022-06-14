@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { COMMAND_IDS } from './constants';
+import CoverageAnnotationsManager from './CoverageAnnotationsManager';
 import Logger from './Logger';
 import { PromiseTreeProvider } from './PromiseTreeProvider';
 
@@ -50,12 +51,17 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 					PromiseTreeProvider.getInstance().updateConfig({promiseTypes: data.value})
 					break;
 				}
-				case 'clearTree': {
-					PromiseTreeProvider.getInstance().empty();
-					break;
-				}
+				// case 'clearTree': {
+				// 	PromiseTreeProvider.getInstance().empty();
+				// 	CoverageAnnotationsManager.get().clearCoverage()
+				// 	break;
+				// }
 				case 'startAnalysis': {
 					vscode.commands.executeCommand(COMMAND_IDS.RUN_COVERAGE);
+					break;
+				}
+				case 'annotate': {
+					vscode.commands.executeCommand(COMMAND_IDS.ANNOTATE_EDITOR);
 					break;
 				}
 			}
@@ -112,7 +118,8 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 		<body>
 
 			<button class="start">New Coverage</button>
-			<button class="clear-tree">Clear Tree</button>
+			<button class="annotate">Annotate Open Editor</button>
+			<!-- <button class="clear-tree">Clear Tree</button> -->
 			
 			<hr>
 			

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid, ID, COVERAGE_TYPE, TryCatchLogVal } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
-import { isObjectEmpty, objectFilter } from './utils'
+import { isObjectEmpty, objectFilter, trimFilePath } from './utils'
 import Logger from './Logger'
 
 /**
@@ -63,7 +63,7 @@ export class Coverage {
                     functionsMap[log.fid] = { 
                         iid: log.iid, 
                         location: log.location, 
-                        code: log.code 
+                        // code: log.code 
                     }
                 }
             })
@@ -117,7 +117,7 @@ export class Coverage {
     // returns a promise map based on the logs in filepath
     async getPromiseMap(
         config?: {query?: string, promiseTypes: string[], coverageType: string}
-    ) {
+    ): Promise<PMap> {
         let promiseMap = {}
         if (Object.keys(this._promiseMap).length) {
             promiseMap = this._promiseMap
@@ -126,9 +126,9 @@ export class Coverage {
             await this._getLogs()
             this._logs = this._cleanupLogs(this._logs)
             promiseMap = await this._addPromises(this._logs)
-            Logger.log(`pidToId Map: ${JSON.stringify(this._pidToIdMap, null, 2)}`)
+            // Logger.log(`pidToId Map: ${JSON.stringify(this._pidToIdMap, null, 2)}`)
             promiseMap = await this._addReactions(this._logs, promiseMap)
-            Logger.log(`links: ${JSON.stringify(this._plinks, null, 2)}`)
+            // Logger.log(`links: ${JSON.stringify(this._plinks, null, 2)}`)
             // promiseMap = await this._addPromiseThenLinks(promiseMap, this._pidToIdMap)
             let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, this._pidToIdMap)
             promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap)
@@ -139,19 +139,19 @@ export class Coverage {
             this._promiseMap = promiseMap
         }
         
-        if(!!config?.query) {
-            promiseMap = objectFilter(promiseMap, (val: any) => val['code'].includes(config.query))
-        }
-        if(!config?.promiseTypes.includes('all')) {
-            promiseMap = objectFilter(promiseMap, (val: any) => config?.promiseTypes.includes(val['type']))
-        }
+        // if(!!config?.query) {
+        //     promiseMap = objectFilter(promiseMap, (val: any) => val['code'].includes(config.query))
+        // }
+        // if(!config?.promiseTypes.includes('all')) {
+        //     promiseMap = objectFilter(promiseMap, (val: any) => config?.promiseTypes.includes(val['type']))
+        // }
         return promiseMap
     }
 
     private _cleanupLogs(_logs: any[]): any[] {
         return _logs.map((log) => {
             if (log.location) {
-                log.location = log.location.replace(/\)|\(/g, '').replace('*file://', '')
+                log.location = trimFilePath(log.location)
                 
                 let relativePathStartInd = log.location.indexOf(`/${this._projectName}/`) + this._projectName.length + 1
                 log.location = this._projectPath + log.location.substring(relativePathStartInd)
@@ -370,8 +370,8 @@ export class Coverage {
         Object.keys(this._plinks).forEach((key: ID) => {
             let linkedTo = key
             let linked = this._plinks[key]
-            promiseMap[linked].settle.fulfill = [...promiseMap[linkedTo].settle.fulfill]
-            promiseMap[linked].settle.reject = [...promiseMap[linkedTo].settle.reject]
+            promiseMap[linked].settle.fulfill = [...promiseMap[linked].settle.fulfill, ...promiseMap[linkedTo].settle.fulfill]
+            promiseMap[linked].settle.reject = [...promiseMap[linked].settle.reject, ...promiseMap[linkedTo].settle.reject]
         })
         return promiseMap
     }
@@ -435,7 +435,7 @@ export class Coverage {
             promiseMap[id].execute.fulfill.push({...logVal, path: `${pathPrefix}${logVal.path}`})
         }
         if (isInsideSomeTryCatchBlock) {
-            Logger.log(`isInside a try/catch block ${JSON.stringify(logVal)}, ${JSON.stringify(isInsideSomeTryCatchBlock)}`)
+            // Logger.log(`isInside a try/catch block ${JSON.stringify(logVal)}, ${JSON.stringify(isInsideSomeTryCatchBlock)}`)
             let tryCatchLogVal: ReactionLogObj = {
                 ...logVal, 
                 tag: LOG_TAGS.TRY_CATCH,
@@ -464,12 +464,12 @@ export class Coverage {
             }
             
             if ([LOG_TAGS.INVOKE_FUN].includes(log.tag) && log.warn === 'function exited') {
-                Logger.log(`log of func invoke: ${JSON.stringify(log, null, 2)}`)
+                // Logger.log(`log of func invoke: ${JSON.stringify(log, null, 2)}`)
                 
                 if(!fidToPromiseMap.has(log.fid)) return;
                 // @ts-ignore
                 fidToPromiseMap.get(log.fid).map((key: string) => {
-                    Logger.log(`adding settle reaction to this key: ${key} : ${JSON.stringify(promiseMap[key])}`)
+                    // Logger.log(`adding settle reaction to this key: ${key} : ${JSON.stringify(promiseMap[key])}`)
                     if(isObjectEmpty(log.exception))
                         promiseMap[key]['settle'][PROMISE_OUTCOME.fulfill].push(logVal)
                     else
@@ -492,7 +492,7 @@ export class Coverage {
     private async _handleAsyncFunctionSettlements(logs: any[], promiseMap: PMap) {
         logs.forEach((log: any) => {
             if ([LOG_TAGS.ASYNC_FUNC_EXIT].includes(log.tag)) {
-                if(!log.result.__cid) return 
+                if(!log.result || !log.result.__cid) return 
 
                 let logVal: ReactionLogObj = {
                     fid: log.iid, 
@@ -505,7 +505,7 @@ export class Coverage {
                 }
                 let key = this.getIdByPid(log.result.__cid)
                 // FIXME: Here we cannot detect if throws or just fulfills.
-                promiseMap[key].settle.fulfill.push(logVal)
+                promiseMap[key]?.settle?.fulfill.push(logVal)
             }
         })
         return promiseMap

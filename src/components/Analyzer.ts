@@ -5,6 +5,7 @@ import { ANALYSIS_PATHS, DEPLOY_ENV, TestFrameworkEnum } from "./constants";
 import { WorkspacePicker } from "./WorkspacePicker";
 import { PromiseTreeProvider } from "./PromiseTreeProvider";
 import Logger from "./Logger";
+import CoverageAnnotationsManager from "./CoverageAnnotationsManager";
 
 /**
  * Runs the dynamic analysis and creates a log file as output.
@@ -96,7 +97,8 @@ export class Analyzer {
 
         
         // vscode.Uri.file(this._extensionPath)
-        PromiseTreeProvider.getInstance().refresh(this.workspace.uri.path, this.workspace.name, outputLogUri)
+        await CoverageAnnotationsManager.get().refresh(this.workspace.uri.path, this.workspace.name, outputLogUri)
+        // PromiseTreeProvider.getInstance().refresh(this.workspace.uri.path, this.workspace.name, outputLogUri)
     }
 
     async updateSelectedWorkspace(newWorkspace: vscode.WorkspaceFolder) {

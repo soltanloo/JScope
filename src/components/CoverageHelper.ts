@@ -1,7 +1,11 @@
-import { CoverageStatusType, COVERAGE_TYPE, PROMISE_OUTCOME, P_TYPE } from "./constants"
+import * as vscode from 'vscode'
+import { CallReferencesTreeProvider } from "./CallReferencesTreeProvider"
+import { CoverageStatusType, CoverageStatusTypeFlattened, COVERAGE_TYPE, PInfo, PROMISE_OUTCOME, P_TYPE, ReactionLogObj } from "./constants"
 import Logger from "./Logger"
+import { convertLocationToUriAndRange } from './utils'
 
 export default class CoverageHelper {
+    // FIXME: DEPRECATED.
     static getCoverageStatusForPromise(item: any): CoverageStatusType {
         // TODO: take into account semantics of promises as well.
         
@@ -21,6 +25,29 @@ export default class CoverageHelper {
         }
         return cov
     }
+
+    static getCoverageStatusForPromiseFlattened(item: any): CoverageStatusTypeFlattened {
+        // TODO: take into account semantics of promises as well.
+        let cov = {
+            settle_fulfill: ([P_TYPE.PromiseReject].includes(item.type) ? null : !!item['settle']['fulfill'].length),
+            settle_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['settle']['reject'].length),
+            register_fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['register']['fulfill'].length),
+            register_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['register']['reject'].length),
+            execute_fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['execute']['fulfill'].length),
+            execute_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['execute']['reject'].length)
+        }
+        return cov
+    }
+
+    static getReactionFunctionLocation(coverageType: COVERAGE_TYPE, reaction: ReactionLogObj, functionsMap: any) {
+        // Logger.log(`ctype: ${coverageType}, reaction: ${reaction.reaction}, fid: ${reaction.fid}, wrapperFid: ${reaction.wrapperFid}`)
+        if(reaction.location) {
+            return reaction.location
+        }
+        if(['register'].includes(coverageType))
+            return functionsMap[reaction.wrapperFid]?.location
+        return functionsMap[reaction.fid]?.location
+    }
     
     static isInsideBlock(innerLocation: string, outerLocation: string) {
         let coordsInner = innerLocation.replace(/\)|\(/g, '').split(':')
@@ -38,6 +65,36 @@ export default class CoverageHelper {
             (parseInt(coordsInner[3]) === parseInt(coordsOuter[3]) && parseInt(coordsInner[4]) < parseInt(coordsOuter[4]))
         // console.log(isFileNameEqual, isAfterStart, isBeforeEnd)
         return isFileNameEqual && isAfterStart && isBeforeEnd
+    }
+
+    static openCallLocations(promiseInfo: PInfo) {
+        // /**
+        //  *  uri - The text document in which to start
+        //     position - The position at which to start
+        //     locations - An array of locations.
+        //     multiple - Define what to do when having multiple results, either peek, gotoAndPeek, or `goto
+        //  */
+        let {uri: baseUri, range: baseRange} = convertLocationToUriAndRange(promiseInfo.location)
+        let seenBefore = new Set<string>()
+        let locations: vscode.Location[] = []
+        locations = promiseInfo.refs.reduce((prev, ref: {id: string, location: string}) => {
+            if(seenBefore.has(ref.location)) return prev
+            seenBefore.add(ref.location)
+            const {uri, range} = convertLocationToUriAndRange(ref.location)
+            return [...prev, new vscode.Location(uri, range)]
+        }, locations)
+        
+        vscode.commands.executeCommand(
+            'editor.action.peekLocations', 
+            baseUri, 
+            baseRange.end, 
+            locations, 
+            'peek',
+            'No actions required.'
+        )
+        // const treeProvider = CallReferencesTreeProvider.getInstance()
+        // Logger.log(JSON.stringify(promiseInfo))
+        // return treeProvider.refresh(promiseInfo.refs)
     }
 
     static *filterForMapValues(iterable: any[], predicate: Function) {

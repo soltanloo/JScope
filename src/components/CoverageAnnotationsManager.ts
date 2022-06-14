@@ -1,0 +1,252 @@
+import * as vscode from 'vscode'
+import Logger from './Logger';
+import { COMMAND_IDS, CoverageStatusTypeFlattened, COVERAGE_TYPE, DECORATION_TYPES, PInfo, PMap, P_TYPE } from './constants';
+import { Coverage } from './Coverage';
+import CoverageReportProvider from './CoverageReportProvider';
+import CoverageHelper from './CoverageHelper';
+import { convertLocationToUriAndRange, findClosingBracketMatchIndex, isInUri, updateStartLocation } from './utils';
+import { privateEncrypt } from 'crypto';
+
+type Decoration = { decorationType: vscode.TextEditorDecorationType; rangesOrOptions: vscode.Range[] | vscode.DecorationOptions[] }
+type Decorations = Decoration[] | undefined
+
+export default class CoverageAnnotationsManager {
+
+    private static instance: CoverageAnnotationsManager | undefined;
+    private coverage: Coverage | undefined;
+
+    async annotate(): Promise<vscode.Disposable | void> {
+        const editor = vscode.window.activeTextEditor;
+        if(!editor) return
+        // Logger.log(`new annotation for ${editor.document.fileName}`)
+        if(!this.coverage) return
+        const promiseMap = await this.coverage.getPromiseMap()
+        Logger.report(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
+        const functionsMap = await this.coverage.getFunctionsMap()
+        // Logger.log(`> Function map created. Keys: ${Object.keys(functionsMap).length}`)
+        const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
+        Logger.report(`----------`)
+        Logger.report(`> Coverage report:`)
+        Logger.report(`> ${coverageReport}`)
+        // Logger.log(`----------`)
+
+        // FIXME: Find the reason for race condition, or find a better way to start.
+        let decorations = await this.getDecorationnForEditor(promiseMap, editor)
+        decorations = this.mergeDecorationsByType(decorations)
+        // Logger.log(`Decorations: ${JSON.stringify(decorations, null, 2)}`)
+        return new Annotation(decorations, editor)
+    }    
+    
+    async getDecorationnForEditor(promiseMap: PMap, editor: vscode.TextEditor): Promise<Decorations> {
+        let decorations: Decorations = Object.entries(promiseMap).map((p): Decoration => {
+            const id: string = p[0]
+            const val: any = p[1]
+            let loc = val['location']
+            if(!isInUri(loc, editor.document.uri))
+                return { decorationType: DECORATION_TYPES.none, rangesOrOptions: [] }
+            // Logger.log(`> valcode: ${val['code']}, ${typeof val['code']} cid: ${val['cid']}, id:${id}`)
+            // TODO: Construct labels based on a structure.
+            // let label: string | vscode.TreeItemLabel = TreeItem.createLabelFromLocation(loc)
+            
+            // Logger.log(`> adding new tree leaf: label: ${label}, location: ${loc}`)
+            const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(val)
+            
+            // For promise.then and promise.catch, only highlight the location of the .then
+            // or .catch part, not the whole promise chain.
+            if([P_TYPE.PromiseCatch, P_TYPE.PromiseThen].includes(val['type'])) {
+                
+                let closingInd = findClosingBracketMatchIndex(val['code'], val['code'].length - 1, true)
+                if(closingInd !== -1) {
+                    closingInd = val['code'].substr(0, closingInd).lastIndexOf('.')
+                    let newLinesCnt = (val['code'].substr(0, closingInd).match(/\n/g)||[]).length;
+                    let onlyThenCode = val['code'].substr(0, closingInd)
+                    let colOffset = onlyThenCode.length - onlyThenCode.lastIndexOf('\n')
+                    loc = updateStartLocation(loc, colOffset, newLinesCnt)
+                    // Logger.log(`CODE<${closingInd}><${newLinesCnt}>: ${val['code']}`)
+                    // Logger.log(`LOC><: \n${val['location']}\n${loc}`)
+                }
+            }
+            const {range, uri} = convertLocationToUriAndRange(loc)
+            
+            const unCoveredCount = Object.values(promiseCovStatus).filter(v => v === false).length
+
+            return {
+                // @ts-ignore
+                decorationType: DECORATION_TYPES[`severity_${Math.floor(unCoveredCount/2)}`],
+                rangesOrOptions: [{
+                    range: range,
+                    hoverMessage: this.getHoverMessage(val, promiseCovStatus)
+                }]
+            }
+            // new AsyncStmtTreeItem({
+            //     label: label, 
+            //     location: loc, 
+            //     children: [], // this.createChildrenForTreeItem(val, functionsMap),
+            //     promiseInfo: val,
+            //     iconPath: this._getCoverageIconForPromise(coverage),
+            //     coverageStatus: coverage,
+            //     coverageType: this._getCoverageType(),
+            // })
+
+        })
+        return decorations;
+    }
+    
+    getHoverMessage(pInfo: PInfo, promiseCovStatus: CoverageStatusTypeFlattened): vscode.MarkdownString {
+        
+        // FIXME: remove.
+        let tooltip = new vscode.MarkdownString(
+` \`\`\`js
+JScope
+\`\`\`
+`       
+// [Show covered actions](command:${peek}?${pInfo.id}) // TODO show the list of executed reaction functions,
+                                                       // using CoverageHelper.getReactionFunctionLocation
+        )
+        tooltip.isTrusted = true
+
+        if(pInfo.refs.length) {
+            tooltip.appendMarkdown(
+                `> [Open References](command:${COMMAND_IDS.MENU__OPEN_CALL_LOCATION}?${encodeURIComponent(JSON.stringify(pInfo))})`
+            )
+        }
+        
+        // @ts-ignore
+        Object.keys(promiseCovStatus).filter((k: string) => promiseCovStatus[k] === false).forEach(k => {
+            // @ts-ignore
+            tooltip.appendMarkdown(this._getActionMessageForReaction(pInfo, k))
+        })
+        return tooltip
+    }
+
+    private _getActionMessageForReaction(pinfo: PInfo, flattenedKey: string) {
+        let newline = `  \n`
+        let [covType, covReaction] = flattenedKey.split('_')
+        if (covType === COVERAGE_TYPE.settle) {
+            Logger.log(`COVERAGE_REPORT: - Promise never \`${covReaction}ed\`.`)
+            return `${newline}- Promise never \`${covReaction}ed\`. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
+        } else if (covType === COVERAGE_TYPE.register) {
+            Logger.log(`COVERAGE_REPORT: - No \`${covReaction}\` reaction registered.`)
+            return `${newline}- No \`${covReaction}\` reaction registered. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
+        }  else { // if (covType === COVERAGE_TYPE.execute) {
+            Logger.log(`COVERAGE_REPORT: - No \`${covReaction}\` reaction executed.`)
+            return `${newline}- No \`${covReaction}\` reaction executed. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
+        }
+    }
+
+    mergeDecorationsByType(decorations: Decorations): Decorations {
+        let mergedObj: any = {}
+        decorations?.forEach((d: Decoration) => {
+            if(mergedObj.hasOwnProperty(d.decorationType.key)) {
+                mergedObj[d.decorationType.key].rangesOrOptions = [
+                    ...mergedObj[d.decorationType.key].rangesOrOptions,
+                    ...d.rangesOrOptions
+                ]
+            } else {
+                mergedObj[d.decorationType.key] = {
+                    decorationType: d.decorationType,
+                    rangesOrOptions: [...d.rangesOrOptions]
+                }
+            }
+        })
+        return Object.values(mergedObj)
+    }
+
+    public static get() {
+        if(!CoverageAnnotationsManager.instance) {
+            CoverageAnnotationsManager.instance = new CoverageAnnotationsManager();
+        }
+        return CoverageAnnotationsManager.instance;
+    }
+
+    async refresh(projectPath: string, projectName: string, logUri?: vscode.Uri) {
+        Logger.report(`> Refreshing AnnotationsManager ${logUri?.path}, ${projectPath}, ${projectName}`)
+        this.coverage = new Coverage(logUri)
+        this.coverage.setProjectInfo(projectPath, projectName)
+        await this.annotate()
+    }
+
+    async clearCoverage() {
+        this.coverage?.clear()
+        await this.annotate()
+    }
+
+    static peekCommandId = COMMAND_IDS.PEEK__PROMISE_ACTION;
+    async onPeekActionHandler(pid: string) {
+        const editor = vscode.window.activeTextEditor;
+        Logger.log(`peeking information for ${pid} ${editor}`)
+        if(!editor) return
+        if(!this.coverage) return
+        const promiseMap = await this.coverage.getPromiseMap()
+        let loc = promiseMap[pid].location
+        const {range, uri} = convertLocationToUriAndRange(loc)
+        // /**
+        //  *  uri - The text document in which to start
+        //     position - The position at which to start
+        //     locations - An array of locations.
+        //     multiple - Define what to do when having multiple results, either peek, gotoAndPeek, or `goto
+        //  */
+        let success = await vscode.commands.executeCommand(
+            'editor.action.peekLocations', 
+            uri, 
+            range.start, 
+            [new vscode.Location(uri, range)], 
+            'peek',
+            'No actions required.'
+        )
+        Logger.log(`command success: ${success}`)
+    }
+
+}
+
+export class Annotation implements vscode.Disposable {
+    
+    // protected disposable: vscode.Disposable;
+
+    constructor(
+        private decorations: Decorations,
+		public editor: vscode.TextEditor,
+	) {
+        this.annotate(
+            decorations,
+            this.editor
+        )
+		// this.disposable = vscode.Disposable.from(
+		// 	vscode.window.onDidChangeTextEditorSelection(this.onTextEditorSelectionChanged, this),
+		// );
+	}
+
+    annotate(decorations: Decorations, editor: vscode.TextEditor) {
+        if (this.decorations?.length) {
+			this.clear();
+		}
+
+		this.decorations = decorations;
+		if (this.decorations?.length) {
+			for (const d of this.decorations) {
+				editor.setDecorations(d.decorationType, d.rangesOrOptions);
+			}
+		}
+    }
+
+    // private onTextEditorSelectionChanged(e: vscode.TextEditorSelectionChangeEvent) {
+	// 	if (this.editor?.document !== e.textEditor.document) return;
+	// }
+
+
+    dispose() {
+		this.clear();
+		// this.disposable.dispose();
+	}
+
+    clear() {
+		if (this.editor == null) return;
+
+		if (this.decorations?.length) {
+			for (const d of this.decorations) {
+                this.editor.setDecorations(d.decorationType, []);
+			}
+			this.decorations = undefined;
+		}
+    }
+}
