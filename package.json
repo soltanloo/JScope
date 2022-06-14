@@ -8,6 +8,7 @@
 	},
 	"activationEvents": [
 		"onCommand:cap.run-coverage",
+		"onCommand:cap.annotate-editor",
 		"onView:cap-view-container",
 		"onView:cap-tree-view",
 		"onView:cap-config-webview"
@@ -36,6 +37,14 @@
 				"title": "JScope:Run Promise Coverage"
 			},
 			{
+				"command": "cap.annotate-editor",
+				"title": "JScope: Annotate open editor"
+			},
+			{
+				"command": "cap.peek-promise-action",
+				"title": "JScope: Show more information for promise"
+			},
+			{
 				"command": "cap-config.update-config",
 				"category": "JScope: Update Config",
 				"title": "Update Promise Coverage Configurations",
@@ -43,7 +52,7 @@
 			},
 			{
 				"command": "right-click-menu.open-call-location",
-				"title": "Go to Reference"
+				"title": "Open Promise References"
 			},
 			{
 				"command": "right-click-menu.show-all-executions",
@@ -70,12 +79,14 @@
 		"menus": {
 			"view/item/context": [
 				{
-					"command": "right-click-menu.open-call-location",
-					"when": "viewItem == AsyncStatementNode"
-				},
-				{
 					"command": "right-click-menu.show-all-executions",
 					"when": "viewItem == ReactionNode"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "right-click-menu.open-call-location",
+					"when": "editorFocus"
 				}
 			]
 		}
