@@ -17,8 +17,9 @@ export default class Logger {
      * Use for debugging purposes only
      */
     public static log(str: string): void {
-        if(!Logger._channel)
-            throw new Error('Logger not initialized.')
+        if(!Logger._channel) {
+            return console.log(`DEBUG: ${str}`)
+        }
 
         Logger._channel.appendLine(`DEBUG: ${str}`)
     }
@@ -28,8 +29,9 @@ export default class Logger {
      * Use for throwing errors from the extension.
      */
      public static error(str: string): void {
-        if(!Logger._channel)
-            throw new Error('Logger not initialized.')
+        if(!Logger._channel) {
+            return console.error(`-- ERROR: ${str}`)   
+        }
 
         Logger._channel.appendLine(`-- ERROR: ${str}`)
     }
@@ -38,8 +40,9 @@ export default class Logger {
      * Use for printing report or other information for production.
      */
     public static report(str: string) {
-        if(!Logger._channel)
-            throw new Error('Logger not initialized.')
+        if(!Logger._channel) {
+            return console.log(str)
+        }
 
         Logger._channel.appendLine(str)
     }

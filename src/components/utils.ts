@@ -1,7 +1,3 @@
-import * as vscode from 'vscode'
-import * as path from 'path'
-import { LOG_TAGS, P_TYPE } from './constants'
-import Logger from './Logger';
 
 export class DefaultDict {
     constructor(defaultInit: any) {
@@ -21,18 +17,6 @@ export function isObjectEmpty(obj: any) {
     return true;
 }
 
-export function convertLocationToUriAndRange(location: string) {
-    let loc = location.replace(/\)|\(/g, '').split(':')
-    let [filepath, startLine, startCol, endLine, endCol] = loc
-    
-    const selectedUri = vscode.Uri.file(filepath)
-    
-    const start = new vscode.Position(+startLine - 1, +startCol - 1);
-    const end = new vscode.Position(+endLine - 1, +endCol - 1);
-    const selectionRange = new vscode.Range(start, end)
-    return {range: selectionRange, uri: selectedUri}
-}
-
 export function updateStartLocation(location: string, colOffset: number, lineOffset: number) {
     let loc = location.replace(/\)|\(/g, '').split(':')
     let [filepath, startLine, startCol, endLine, endCol] = loc
@@ -42,10 +26,6 @@ export function updateStartLocation(location: string, colOffset: number, lineOff
 
 export function trimFilePath(location: string) {
     return location.replace(/\)|\(/g, '').replace('*file://', '').replace('file://', '')
-}
-
-export function isInUri(location: string, file: vscode.Uri) {
-    return location.includes(trimFilePath(file.toString()))
 }
 
 export function getCoverageLabel(status: any, coverageType: string, fulfillOrReject: string) {
@@ -62,10 +42,6 @@ export function objectFilter(obj: any, predicate: Function){
 
 export function trimLabel(label: string): string {
     return label && label.length > 50 ? label.substr(0, 47) + '...' : label
-}
-
-export function getIconPath(extensionPath: string, icon: string): vscode.Uri {
-    return vscode.Uri.file(path.join(extensionPath, 'media', 'icons', icon))
 }
 
 export function findClosingBracketMatchIndex(str: string, pos: number, reverse=false) {

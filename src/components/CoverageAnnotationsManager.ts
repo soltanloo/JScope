@@ -1,14 +1,12 @@
 import * as vscode from 'vscode'
 import Logger from './Logger';
-import { COMMAND_IDS, CoverageStatusTypeFlattened, COVERAGE_TYPE, DECORATION_TYPES, PInfo, PMap, P_TYPE } from './constants';
+import { COMMAND_IDS, CoverageStatusTypeFlattened, COVERAGE_TYPE, PInfo, PMap, P_TYPE } from './constants';
+import { DECORATION_TYPES, Decoration, Decorations } from './decorations';
 import { Coverage } from './Coverage';
 import CoverageReportProvider from './CoverageReportProvider';
 import CoverageHelper from './CoverageHelper';
-import { convertLocationToUriAndRange, findClosingBracketMatchIndex, isInUri, updateStartLocation } from './utils';
-import { privateEncrypt } from 'crypto';
-
-type Decoration = { decorationType: vscode.TextEditorDecorationType; rangesOrOptions: vscode.Range[] | vscode.DecorationOptions[] }
-type Decorations = Decoration[] | undefined
+import { findClosingBracketMatchIndex, updateStartLocation } from './utils';
+import {convertLocationToUriAndRange, isInUri} from './vscode-utils'
 
 export default class CoverageAnnotationsManager {
 
@@ -161,7 +159,7 @@ JScope
 
     async refresh(projectPath: string, projectName: string, logUri?: vscode.Uri) {
         Logger.report(`> Refreshing AnnotationsManager ${logUri?.path}, ${projectPath}, ${projectName}`)
-        this.coverage = new Coverage(logUri)
+        this.coverage = new Coverage(logUri?.path)
         this.coverage.setProjectInfo(projectPath, projectName)
         await this.annotate()
     }

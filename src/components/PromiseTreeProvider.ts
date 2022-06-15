@@ -115,7 +115,7 @@ export class PromiseTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
     refresh(projectPath: string, projectName: string, logUri?: vscode.Uri) {
         Logger.report(`> refreshing tree... ${logUri?.path}`)
-        this.cov = new Coverage(logUri)
+        this.cov = new Coverage(logUri?.path)
         this.cov.setProjectInfo(projectPath, projectName)
         this._updateTreeData();
     }

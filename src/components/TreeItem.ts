@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CallReferencesTreeProvider } from './CallReferencesTreeProvider';
 import { COMMAND_IDS, CoverageStatusType, COVERAGE_TYPE, ID, LOG_TAGS, PInfo, ReactionLogObj } from './constants';
-import { convertLocationToUriAndRange, trimLabel } from './utils';
+import { convertLocationToUriAndRange } from './vscode-utils'
 
 export enum TreeItemType {
     ASYNC_STMT = 'AsyncStatementNode',

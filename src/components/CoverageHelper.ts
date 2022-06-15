@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { CallReferencesTreeProvider } from "./CallReferencesTreeProvider"
 import { CoverageStatusType, CoverageStatusTypeFlattened, COVERAGE_TYPE, PInfo, PROMISE_OUTCOME, P_TYPE, ReactionLogObj } from "./constants"
 import Logger from "./Logger"
-import { convertLocationToUriAndRange } from './utils'
+import { convertLocationToUriAndRange } from './vscode-utils'
 
 export default class CoverageHelper {
     // FIXME: DEPRECATED.
@@ -65,36 +65,6 @@ export default class CoverageHelper {
             (parseInt(coordsInner[3]) === parseInt(coordsOuter[3]) && parseInt(coordsInner[4]) < parseInt(coordsOuter[4]))
         // console.log(isFileNameEqual, isAfterStart, isBeforeEnd)
         return isFileNameEqual && isAfterStart && isBeforeEnd
-    }
-
-    static openCallLocations(promiseInfo: PInfo) {
-        // /**
-        //  *  uri - The text document in which to start
-        //     position - The position at which to start
-        //     locations - An array of locations.
-        //     multiple - Define what to do when having multiple results, either peek, gotoAndPeek, or `goto
-        //  */
-        let {uri: baseUri, range: baseRange} = convertLocationToUriAndRange(promiseInfo.location)
-        let seenBefore = new Set<string>()
-        let locations: vscode.Location[] = []
-        locations = promiseInfo.refs.reduce((prev, ref: {id: string, location: string}) => {
-            if(seenBefore.has(ref.location)) return prev
-            seenBefore.add(ref.location)
-            const {uri, range} = convertLocationToUriAndRange(ref.location)
-            return [...prev, new vscode.Location(uri, range)]
-        }, locations)
-        
-        vscode.commands.executeCommand(
-            'editor.action.peekLocations', 
-            baseUri, 
-            baseRange.end, 
-            locations, 
-            'peek',
-            'No actions required.'
-        )
-        // const treeProvider = CallReferencesTreeProvider.getInstance()
-        // Logger.log(JSON.stringify(promiseInfo))
-        // return treeProvider.refresh(promiseInfo.refs)
     }
 
     static *filterForMapValues(iterable: any[], predicate: Function) {

@@ -1,4 +1,3 @@
-import * as vscode from 'vscode'
 import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid, ID, COVERAGE_TYPE, TryCatchLogVal } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
@@ -11,7 +10,7 @@ import Logger from './Logger'
  * - Generates coverage reports.
  */
 export class Coverage {
-    private _logUri: vscode.Uri
+    private _logPath: string
     private _logs: any[]
     private _promiseMap: PMap
     private _pidToIdMap: {[pid: string/*PID*/]: string} // used to reduce search time from O(n) to O(1) when adding reactions. Filled while adding promises.
@@ -20,8 +19,12 @@ export class Coverage {
     private _projectPath: string
     private _projectName: string
 
-    constructor(logUri?: vscode.Uri) {
-        this._logUri = logUri || vscode.Uri.file('')
+    /**
+     * 
+     * @param path {string} points to the log file containing coverage output.
+     */
+    constructor(path?: string) {
+        this._logPath = path || ''
         this._projectPath = '' 
         this._projectName = '' 
         this._promiseMap = {}
@@ -47,7 +50,7 @@ export class Coverage {
     }
 
     private async _getLogs() {
-        if (!this._logs.length) this._logs = await LogParser.parseJsonLogs(this._logUri)
+        if (!this._logs.length) this._logs = await LogParser.parseJsonLogs(this._logPath)
     }
 
     // returns the functions map based on the logs in filepath.

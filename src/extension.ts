@@ -79,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       IDS.MENU__OPEN_CALL_LOCATION, 
-      CoverageHelper.openCallLocations
+      CallReferencesTreeProvider.openCallLocations
     )
   );
 

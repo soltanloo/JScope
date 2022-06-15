@@ -1,4 +1,3 @@
-import {Uri} from 'vscode'
 import * as fs from 'fs'
 import * as readline from 'readline'
 
@@ -7,9 +6,9 @@ import * as readline from 'readline'
  */
 export default class LogParser {
   
-  static async parseJsonLogs(uri: Uri): Promise<any[]> {
+  static async parseJsonLogs(path: string): Promise<any[]> {
     const rl = readline.createInterface({
-      input: fs.createReadStream(uri.path),
+      input: fs.createReadStream(path),
       crlfDelay: Infinity
     })
     let result = []
