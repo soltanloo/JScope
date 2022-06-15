@@ -345,7 +345,7 @@ export class Coverage {
                 if (promiseMap[this.getIdByPid(pid)]) {
                     
                     // promise is settled with another promise
-                    if(logVal.value?.hasOwnProperty('__cid') && 
+                    if(logVal.value?.hasOwnProperty && logVal.value?.hasOwnProperty('__cid') && 
                         !promiseMap[this.getIdByPid(pid)].links.some(v => v.id === this.getIdByPid(logVal.value.__cid))) {
 
                         let linkedToId = this.getIdByPid(logVal.value.__cid)
@@ -478,7 +478,7 @@ export class Coverage {
                     else
                         promiseMap[key]['settle'][PROMISE_OUTCOME.reject].push(logVal)
 
-                    if(log.returnVal.hasOwnProperty('__cid') && 
+                    if(logVal.value?.hasOwnProperty && log.returnVal.hasOwnProperty('__cid') && 
                         !promiseMap[key].links.some((v: any) => v.id === this.getIdByPid(log.returnVal.__cid))) {
                         let linkedToId = this.getIdByPid(log.returnVal.__cid)
                         if(linkedToId) {
