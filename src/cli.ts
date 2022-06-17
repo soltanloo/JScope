@@ -23,6 +23,7 @@ async function cli(path: string) {
     const promiseMap = await cov.getPromiseMap()
     const functionsMap = await cov.getFunctionsMap()
     const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
+    Logger.report(path)
     Logger.report(`----------`)
     Logger.report(`> Coverage report:`)
     Logger.report(`> ${coverageReport}`)
