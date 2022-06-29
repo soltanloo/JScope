@@ -31,15 +31,19 @@ async function cli(path: string) {
 
     Object.values(promiseMap).forEach((pInfo: PInfo) => {
         pInfo.id = `p${pInfo.id}`
-        Logger.report(`> ${pInfo.id} @ ${pInfo.location}`)
+        Logger.report(`> ${pInfo.id} @ ${pInfo.type} @ ${pInfo.location}`)
         const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(pInfo)
+        const s = promiseCovStatus
+        const n = Number
+        Logger.report(`  ${n(s.settle_fulfill)}${n(s.register_fulfill)}${n(s.execute_fulfill)}\n  ${n(s.settle_reject)}${n(s.register_reject)}${n(s.execute_reject)}`)
+        
         // @ts-ignore
-        Object.keys(promiseCovStatus).filter((k: string) => promiseCovStatus[k] === false).forEach(k => {
-            // @ts-ignore
-            _getActionMessageForReaction(pInfo, k)
-        })
+        // Object.keys(promiseCovStatus).filter((k: string) => promiseCovStatus[k] === false).forEach(k => {
+        //     // @ts-ignore
+        //     _getActionMessageForReaction(pInfo, k)
+        // })
     
-        const unCoveredCount = Object.values(promiseCovStatus).filter(v => v === false).length
+        // const unCoveredCount = Object.values(promiseCovStatus).filter(v => v === false).length
 
     })
 }

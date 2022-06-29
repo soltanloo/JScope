@@ -131,8 +131,8 @@ export class Coverage {
             promiseMap = await this._addPromises(this._logs)
             // Logger.log(`pidToId Map: ${JSON.stringify(this._pidToIdMap, null, 2)}`)
             promiseMap = await this._addReactions(this._logs, promiseMap)
+            // TODO: promiseMap = await this._addPromiseThenLinks(promiseMap, this._pidToIdMap)
             // Logger.log(`links: ${JSON.stringify(this._plinks, null, 2)}`)
-            // promiseMap = await this._addPromiseThenLinks(promiseMap, this._pidToIdMap)
             let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, this._pidToIdMap)
             promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap)
             promiseMap = await this._handleAsyncFunctionSettlements(this._logs, promiseMap)
@@ -365,9 +365,9 @@ export class Coverage {
         return promiseMap
     }
 
-    // private async _addPromiseThenLinks(promiseMap: PMap, _pidToIdMap: any): Promise<PMap> {
-    //     return promiseMap
-    // }
+    private async _addPromiseThenLinks(promiseMap: PMap, _pidToIdMap: any): Promise<PMap> {
+        return promiseMap
+    }
 
     private async _handleLinkedPromiseSettlements(promiseMap: PMap): Promise<PMap> {
         Object.keys(this._plinks).forEach((key: ID) => {
