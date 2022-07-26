@@ -118,11 +118,12 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 		<body>
 
 			<button class="start">New Coverage</button>
-			<button class="annotate">Annotate Open Editor</button>
+			<!-- <button class="annotate">Annotate Open Editor</button> -->
 			<!-- <button class="clear-tree">Clear Tree</button> -->
 			
 			<hr>
 			
+			<!--
 			<p>Choose Coverage Type:</p>
 			<div><input type="radio" id="settle" name="coverageType" value="settle" checked>
 			<label for="settle">Settlement coverage</label></div>
@@ -130,7 +131,8 @@ export class ConfigWebviewProvider implements vscode.WebviewViewProvider {
 			<label for="register">Reaction Registration coverage</label></div>
 			<div><input type="radio" id="execute" name="coverageType" value="execute">
 			<label for="execute">Reaction Execution coverage</label></div>
-			
+			-->
+
 			<!--
 			<hr>
 			<p>Select Promise Types:</p>

@@ -39,6 +39,10 @@ export class Coverage {
         this._logs = this._cleanupLogs(this._logs)
     }
 
+    projectPath() {
+        return this._projectPath
+    }
+
     clear() {
         this._logs = [];
         this._projectPath = '' 

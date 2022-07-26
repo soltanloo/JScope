@@ -47,4 +47,12 @@ export default class Logger {
         Logger._channel.appendLine(str)
     }
 
+    public static clear() {
+        if(!Logger._channel) {
+            return console.clear()
+        }
+
+        Logger._channel.clear()
+    }
+
 }

@@ -7,6 +7,7 @@ import CoverageReportProvider from './CoverageReportProvider';
 import CoverageHelper from './CoverageHelper';
 import { findClosingBracketMatchIndex, updateStartLocation } from './utils';
 import {convertLocationToUriAndRange, isInUri} from './vscode-utils'
+import CLIReporter from './CLIReporter';
 
 export default class CoverageAnnotationsManager {
 
@@ -15,17 +16,19 @@ export default class CoverageAnnotationsManager {
 
     async annotate(): Promise<vscode.Disposable | void> {
         const editor = vscode.window.activeTextEditor;
+        const editorPath = vscode.window.activeTextEditor?.document.uri.fsPath
         if(!editor) return
-        // Logger.log(`new annotation for ${editor.document.fileName}`)
         if(!this.coverage) return
+        if(!editorPath?.includes(this.coverage.projectPath())) return
+
         const promiseMap = await this.coverage.getPromiseMap()
-        Logger.report(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
+        Logger.log(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
         const functionsMap = await this.coverage.getFunctionsMap()
         // Logger.log(`> Function map created. Keys: ${Object.keys(functionsMap).length}`)
-        const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
-        Logger.report(`----------`)
-        Logger.report(`> Coverage report:`)
-        Logger.report(`> ${coverageReport}`)
+        // const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
+        // Logger.report(`----------`)
+        // Logger.report(`> Coverage report:`)
+        // Logger.report(`> ${coverageReport}`)
         // Logger.log(`----------`)
 
         // FIXME: Find the reason for race condition, or find a better way to start.
@@ -95,7 +98,7 @@ export default class CoverageAnnotationsManager {
         // FIXME: remove.
         let tooltip = new vscode.MarkdownString(
 ` \`\`\`js
-JScope
+JScope: ${pInfo.type}@${pInfo.location.slice(pInfo.location.indexOf(':')+1)}
 \`\`\`
 `       
 // [Show covered actions](command:${peek}?${pInfo.id}) // TODO show the list of executed reaction functions,
@@ -105,7 +108,7 @@ JScope
 
         if(pInfo.refs.length) {
             tooltip.appendMarkdown(
-                `> [Open References](command:${COMMAND_IDS.MENU__OPEN_CALL_LOCATION}?${encodeURIComponent(JSON.stringify(pInfo))})`
+                `> [Open References](command:${COMMAND_IDS.MENU__OPEN_CALL_LOCATION}?${encodeURIComponent(JSON.stringify({refs: pInfo.refs.length > 10 ? pInfo.refs.slice(0, 10) : pInfo.refs, location: pInfo.location}))})`
             )
         }
         
@@ -121,13 +124,10 @@ JScope
         let newline = `  \n`
         let [covType, covReaction] = flattenedKey.split('_')
         if (covType === COVERAGE_TYPE.settle) {
-            Logger.log(`COVERAGE_REPORT: - Promise never \`${covReaction}ed\`.`)
             return `${newline}- Promise never \`${covReaction}ed\`. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
         } else if (covType === COVERAGE_TYPE.register) {
-            Logger.log(`COVERAGE_REPORT: - No \`${covReaction}\` reaction registered.`)
             return `${newline}- No \`${covReaction}\` reaction registered. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
         }  else { // if (covType === COVERAGE_TYPE.execute) {
-            Logger.log(`COVERAGE_REPORT: - No \`${covReaction}\` reaction executed.`)
             return `${newline}- No \`${covReaction}\` reaction executed. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
         }
     }
@@ -161,6 +161,7 @@ JScope
         Logger.report(`> Refreshing AnnotationsManager ${logUri?.path}, ${projectPath}, ${projectName}`)
         this.coverage = new Coverage(logUri?.path)
         this.coverage.setProjectInfo(projectPath, projectName)
+        CLIReporter.generateReport(this.coverage)
         await this.annotate()
     }
 

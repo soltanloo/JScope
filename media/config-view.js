@@ -16,9 +16,9 @@
     document.querySelector('.start').addEventListener('click', () => {
         vscode.postMessage({ type: 'startAnalysis', value: {} });
     });
-    document.querySelector('.annotate').addEventListener('click', () => {
-        vscode.postMessage({ type: 'annotate', value: {} });
-    });
+    // document.querySelector('.annotate').addEventListener('click', () => {
+    //     vscode.postMessage({ type: 'annotate', value: {} });
+    // });
 
     // function _updateSearchQuery() {
     //     vscode.postMessage({ type: 'updateSearchQuery', value: this.value });

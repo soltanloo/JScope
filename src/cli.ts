@@ -1,51 +1,12 @@
-import { COVERAGE_TYPE, PInfo } from "./components/constants"
 import { Coverage } from "./components/Coverage"
-import CoverageHelper from "./components/CoverageHelper"
-import CoverageReportProvider from "./components/CoverageReportProvider"
 import Logger from "./components/Logger"
 import * as path from 'path'
 import * as fs from 'fs'
-
-
-function _getActionMessageForReaction(pinfo: PInfo, flattenedKey: string) {
-    let [covType, covReaction] = flattenedKey.split('_')
-    if (covType === COVERAGE_TYPE.settle) {
-        Logger.report(`${pinfo.id}: Promise never \`${covReaction}ed\`.`)
-    } else if (covType === COVERAGE_TYPE.register) {
-        Logger.report(`${pinfo.id}: No \`${covReaction}\` reaction registered.`)
-    }  else { // if (covType === COVERAGE_TYPE.execute) {
-        Logger.report(`${pinfo.id}: No \`${covReaction}\` reaction executed.`)
-    }
-}
+import CLIReporter from "./components/CLIReporter"
 
 async function cli(path: string) {
     const cov = new Coverage(path)
-    const promiseMap = await cov.getPromiseMap()
-    const functionsMap = await cov.getFunctionsMap()
-    const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
-    Logger.report(path)
-    Logger.report(`----------`)
-    Logger.report(`> Coverage report:`)
-    Logger.report(`> ${coverageReport}`)
-    Logger.report(`----------`)
-
-    Object.values(promiseMap).forEach((pInfo: PInfo) => {
-        pInfo.id = `p${pInfo.id}`
-        Logger.report(`> ${pInfo.id} @ ${pInfo.type} @ ${pInfo.location}`)
-        const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(pInfo)
-        const s = promiseCovStatus
-        const n = Number
-        Logger.report(`  ${n(s.settle_fulfill)}${n(s.register_fulfill)}${n(s.execute_fulfill)}\n  ${n(s.settle_reject)}${n(s.register_reject)}${n(s.execute_reject)}`)
-        
-        // @ts-ignore
-        // Object.keys(promiseCovStatus).filter((k: string) => promiseCovStatus[k] === false).forEach(k => {
-        //     // @ts-ignore
-        //     _getActionMessageForReaction(pInfo, k)
-        // })
-    
-        // const unCoveredCount = Object.values(promiseCovStatus).filter(v => v === false).length
-
-    })
+    CLIReporter.generateReport(cov)
 }
 
 (async function() {

@@ -51,6 +51,12 @@ export function activate(context: vscode.ExtensionContext) {
     // await vscode.commands.executeCommand(IDS.RUN_COVERAGE);
     await CoverageAnnotationsManager.get().annotate()
   }));
+  
+  // Attach an event listener so whenever a new file is opened, annotate that file if coverage is available for it.
+  vscode.window.onDidChangeActiveTextEditor(async () => {
+    await CoverageAnnotationsManager.get().annotate()
+  }) // try using vscode.workspace.onDidOpenTextDocument() if there are unexpected cases with this listener.
+
   // peek for suggested actions and more info on a promise.
   context.subscriptions.push(
     vscode.commands.registerCommand(
