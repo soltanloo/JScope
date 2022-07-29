@@ -22,7 +22,7 @@ export default class CoverageAnnotationsManager {
         if(!editorPath?.includes(this.coverage.projectPath())) return
 
         const promiseMap = await this.coverage.getPromiseMap()
-        Logger.log(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
+        // Logger.log(`> Promise map created. Keys: ${Object.keys(promiseMap).length}`)
         const functionsMap = await this.coverage.getFunctionsMap()
         // Logger.log(`> Function map created. Keys: ${Object.keys(functionsMap).length}`)
         // const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
@@ -108,7 +108,12 @@ JScope: ${pInfo.type}@${pInfo.location.slice(pInfo.location.indexOf(':')+1)}
 
         if(pInfo.refs.length) {
             tooltip.appendMarkdown(
-                `> [Open References](command:${COMMAND_IDS.MENU__OPEN_CALL_LOCATION}?${encodeURIComponent(JSON.stringify({refs: pInfo.refs.length > 10 ? pInfo.refs.slice(0, 10) : pInfo.refs, location: pInfo.location}))})`
+                `> [Open References](command:${COMMAND_IDS.MENU__OPEN_CALL_LOCATION}?${encodeURIComponent(JSON.stringify({refs: pInfo.refs.length > 5 ? pInfo.refs.slice(0, 5) : pInfo.refs, location: pInfo.location}))})  \n`
+            )
+        }
+        if(pInfo.links.length) {
+            tooltip.appendMarkdown(
+                `> [Open Links](command:${COMMAND_IDS.MENU__OPEN_LINKS}?${encodeURIComponent(JSON.stringify({links: pInfo.links.length > 5 ? pInfo.refs.slice(0, 5) : pInfo.links, location: pInfo.location}))})  \n`
             )
         }
         
@@ -170,6 +175,7 @@ JScope: ${pInfo.type}@${pInfo.location.slice(pInfo.location.indexOf(':')+1)}
         await this.annotate()
     }
 
+    // Promise suggested actions. for uncovered parts.
     static peekCommandId = COMMAND_IDS.PEEK__PROMISE_ACTION;
     async onPeekActionHandler(pid: string) {
         const editor = vscode.window.activeTextEditor;

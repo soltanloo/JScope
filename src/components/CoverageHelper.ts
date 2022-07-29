@@ -29,12 +29,19 @@ export default class CoverageHelper {
     static getCoverageStatusForPromiseFlattened(item: any): CoverageStatusTypeFlattened {
         // TODO: take into account semantics of promises as well.
         let cov = {
-            settle_fulfill: (/* [P_TYPE.PromiseReject].includes(item.type) ? null : */ !!item['settle']['fulfill'].length),
-            settle_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['settle']['reject'].length),
-            register_fulfill: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : */ !!item['register']['fulfill'].length),
-            register_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['register']['reject'].length),
-            execute_fulfill: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : */ !!item['execute']['fulfill'].length),
-            execute_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['execute']['reject'].length)
+            // settle_fulfill: (/* [P_TYPE.PromiseReject].includes(item.type) ? null : */ !!item['settle']['fulfill'].length),
+            // settle_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['settle']['reject'].length),
+            // register_fulfill: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : */ !!item['register']['fulfill'].length),
+            // register_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['register']['reject'].length),
+            // execute_fulfill: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : */ !!item['execute']['fulfill'].length),
+            // execute_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['execute']['reject'].length)
+
+            settle_fulfill: ([P_TYPE.PromiseReject].includes(item.type) ? null : !!item['settle']['fulfill'].length),
+            settle_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['settle']['reject'].length),
+            register_fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['register']['fulfill'].length),
+            register_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['register']['reject'].length),
+            execute_fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['execute']['fulfill'].length),
+            execute_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['execute']['reject'].length)
         }
         return cov
     }

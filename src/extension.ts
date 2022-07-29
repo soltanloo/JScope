@@ -3,14 +3,12 @@
 import * as vscode from 'vscode';
 import * as path from 'path'
 import { STORAGE_KEYS, COMMAND_IDS as IDS } from './components/constants';
-import { PromiseTreeProvider } from './components/PromiseTreeProvider';
 import { ConfigWebviewProvider } from './components/ConfigWebviewProvider';
 import { Analyzer } from './components/Analyzer';
 import Logger from './components/Logger';
-import { AsyncStmtTreeItem, ReactionTreeItem } from './components/TreeItem';
 import { CallReferencesTreeProvider } from './components/CallReferencesTreeProvider';
 import CoverageAnnotationsManager from './components/CoverageAnnotationsManager';
-import CoverageHelper from './components/CoverageHelper';
+import PeekView from './components/PeekView';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -33,12 +31,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 
   // // References tree provider 
-  const callReferencesTreeProvider = CallReferencesTreeProvider.getInstance()
-  const CallReferenceTreeView = vscode.window.createTreeView(IDS.CALL_REFERENCES_TREE_VIEW, {
-    treeDataProvider: callReferencesTreeProvider
-  })
-  callReferencesTreeProvider.setTreeView(CallReferenceTreeView)
-  context.subscriptions.push(CallReferenceTreeView);
+  // const callReferencesTreeProvider = CallReferencesTreeProvider.getInstance()
+  // const CallReferenceTreeView = vscode.window.createTreeView(IDS.CALL_REFERENCES_TREE_VIEW, {
+  //   treeDataProvider: callReferencesTreeProvider
+  // })
+  // callReferencesTreeProvider.setTreeView(CallReferenceTreeView)
+  // context.subscriptions.push(CallReferenceTreeView);
   
   
   // CONFIG WEBVIEW PROVIDER
@@ -57,15 +55,15 @@ export function activate(context: vscode.ExtensionContext) {
     await CoverageAnnotationsManager.get().annotate()
   }) // try using vscode.workspace.onDidOpenTextDocument() if there are unexpected cases with this listener.
 
-  // peek for suggested actions and more info on a promise.
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      CoverageAnnotationsManager.peekCommandId, 
-      async (pid) => {
-        await CoverageAnnotationsManager.get().onPeekActionHandler(pid)
-      }
-    )
-  );
+  // // peek for suggested actions and more info on a promise.
+  // context.subscriptions.push(
+  //   vscode.commands.registerCommand(
+  //     CoverageAnnotationsManager.peekCommandId, 
+  //     async (pid) => {
+  //       await CoverageAnnotationsManager.get().onPeekActionHandler(pid)
+  //     }
+  //   )
+  // );
 
 
   // RUN PROMISE COVERAGE COMMAND
@@ -85,7 +83,14 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       IDS.MENU__OPEN_CALL_LOCATION, 
-      CallReferencesTreeProvider.openCallLocations
+      PeekView.openReferences
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      IDS.MENU__OPEN_LINKS, 
+      PeekView.openLinks
     )
   );
 

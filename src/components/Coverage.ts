@@ -70,6 +70,7 @@ export class Coverage {
                     functionsMap[log.fid] = { 
                         iid: log.iid, 
                         location: log.location, 
+                        returnVal: log.returnVal,
                         // code: log.code 
                     }
                 }
@@ -135,15 +136,17 @@ export class Coverage {
             promiseMap = await this._addPromises(this._logs)
             // Logger.log(`pidToId Map: ${JSON.stringify(this._pidToIdMap, null, 2)}`)
             promiseMap = await this._addReactions(this._logs, promiseMap)
-            // TODO: promiseMap = await this._addPromiseThenLinks(promiseMap, this._pidToIdMap)
             // Logger.log(`links: ${JSON.stringify(this._plinks, null, 2)}`)
             let fidToPromiseMap = this._getFidToPromiseMap(promiseMap, this._pidToIdMap)
             promiseMap = await this._handleSpecialSettlementCases(this._logs, promiseMap, fidToPromiseMap)
+            promiseMap = await this._addPromiseThenLinks(promiseMap, this._pidToIdMap) // TODO:
+            Logger.log(`links: ${JSON.stringify(this._plinks, null, 2)}`)
             promiseMap = await this._handleAsyncFunctionSettlements(this._logs, promiseMap)
             promiseMap = await this._handleLinkedPromiseSettlements(promiseMap)
             promiseMap = await this._handleAwaits(this._logs, promiseMap)
             
             this._promiseMap = promiseMap
+            Logger.log(`> Promise map created: ${JSON.stringify(promiseMap, null, 2)}`)
         }
         
         // if(!!config?.query) {
@@ -369,7 +372,25 @@ export class Coverage {
         return promiseMap
     }
 
-    private async _addPromiseThenLinks(promiseMap: PMap, _pidToIdMap: any): Promise<PMap> {
+    private async _addPromiseThenLinks(promiseMap: PMap, pidToIdMap: any): Promise<PMap> {
+        let functionsMap = await this.getFunctionsMap()
+        Object.keys(promiseMap).forEach(keyId => {
+            let pInfo = promiseMap[keyId]
+            if(!pInfo.parent) return;
+            
+            
+            let fulfillFids = pInfo.settle.fulfill.map(fulfillFunc => fulfillFunc.fid)
+            fulfillFids.map(fid => {
+                
+                const returnVal = functionsMap[fid].returnVal
+                // Means .then returns a promise, so it is linked to .then
+                if(returnVal.hasOwnProperty('__cid')) {
+                    let returnValId = pidToIdMap[returnVal.__cid]
+                    promiseMap[keyId].links.push({id: returnValId, location: promiseMap[returnValId]?.location || ""})
+                    this._plinks[returnValId] = keyId      
+                }
+            })
+        })
         return promiseMap
     }
 

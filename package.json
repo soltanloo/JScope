@@ -55,6 +55,10 @@
 				"title": "Open Promise References"
 			},
 			{
+				"command": "right-click-menu.open-links",
+				"title": "Show Links"
+			},
+			{
 				"command": "right-click-menu.show-all-executions",
 				"title": "Show All Executions"
 			}
@@ -81,12 +85,6 @@
 				{
 					"command": "right-click-menu.show-all-executions",
 					"when": "viewItem == ReactionNode"
-				}
-			],
-			"editor/context": [
-				{
-					"command": "right-click-menu.open-call-location",
-					"when": "editorFocus"
 				}
 			]
 		}

@@ -22,6 +22,7 @@ export const COMMAND_IDS = {
     
     MENU__SHOW_ALL_ACTIONS: 'right-click-menu.show-all-executions',
     MENU__OPEN_CALL_LOCATION: 'right-click-menu.open-call-location',
+    MENU__OPEN_LINKS: 'right-click-menu.open-links',
 
     CALL_REFERENCES_TREE_VIEW: 'call-references-tree-view',
 
