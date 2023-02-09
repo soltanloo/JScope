@@ -1,4 +1,4 @@
-# Javascript Async Coverage VScode Extension
+# JScope – Javascript Async Coverage VScode Extension
 
 ## Instructions for internal use:
 
