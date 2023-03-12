@@ -2,7 +2,7 @@
  * if internal, will not execute the analysis and read the logs from logs folder.
  */
 // FIXME: change for production
-export const DEPLOY_ENV: 'production' | 'internal' = 'internal'
+export const DEPLOY_ENV: 'production' | 'internal' = 'production'
 
 export enum STORAGE_KEYS {
     NODEPROF_PATH = 'NODEPROF_PATH',
@@ -14,31 +14,23 @@ export enum TestFrameworkEnum {
 }
 
 export const COMMAND_IDS = {
-    RUN_COVERAGE: 'cap.run-coverage',
-    PROMISE_TREE_VIEW: 'cap-tree-view',
-    PROMISE_TREE_CONFIG_WEBVIEW: 'cap-config-webview',
-    PROMISE_TREE_REVEAL_ITEM: 'promise-tree.reveal',
-    CONFIG__UPDATE_CONFIG: 'cap-config.update-config',
+    NEW_COVERAGE: 'jscope.new-coverage',
+    MAIN_MENU_WEBVIEW: 'jscope.main-menu-webview',
     
-    MENU__SHOW_ALL_ACTIONS: 'right-click-menu.show-all-executions',
-    MENU__OPEN_CALL_LOCATION: 'right-click-menu.open-call-location',
-    MENU__OPEN_LINKS: 'right-click-menu.open-links',
+    PEEK_MENU_REFERENCES: 'jscope.peek-references',
+    PEEK_MENU_LINKS: 'jscope.peek-links',
 
-    CALL_REFERENCES_TREE_VIEW: 'call-references-tree-view',
-
-    ANNOTATE_EDITOR: 'cap.annotate-editor',
-
-    PEEK__PROMISE_ACTION: 'cap.peek-promise-action',
+    ANNOTATE_EDITOR: 'jscope.annotate-editor',
   };
 
 export const ANALYSIS_PATHS = {
-    ANALYSIS:  'async-coverage/src/analysis.js',
-    RUN_FMWK_CMD:  'async-coverage/run_test_framework.sh',
+    ANALYSIS:  'instrumentation/analysis.js',
+    RUN_FMWK_CMD:  'instrumentation/run_test_framework.sh',
     FRAMEWORKS: {
-        'mocha': 'async-coverage/tests/runMocha.mjs',
-        'tap':   'async-coverage/tests/runTap.js',
+        'mocha': 'instrumentation/runMocha.mjs',
+        'tap':   'instrumentation/runTap.js',
     },
-    TMP_LOG_DIR: '/tmp/__promise__coverage__logs'
+    TMP_LOG_DIR: '.__jscope__logs'
 }
 
 export enum P_TYPE {
@@ -51,7 +43,6 @@ export enum P_TYPE {
     PromiseReject = 'PromiseReject',
     PromiseAll = 'PromiseAll',
     PromiseRace = 'PromiseRace',
-    CallbackArg = 'CallbackArg',
 }
 
 export enum COVERAGE_TYPE {
@@ -74,6 +65,7 @@ export enum LOG_TAGS {
     ASYNC_FUNC_EXIT = 'async-function-exit',
     TRY_CATCH = 'try-catch',
     AWAIT = 'await',
+    AWAIT_PRE = 'awaitPre',
   }
 
 export enum CoverageGroupByEnum {
@@ -98,6 +90,8 @@ export type CoverageStatusTypeFlattened = {
     execute_fulfill: null | boolean, 
     execute_reject: null | boolean
 }
+
+export const CoverageStatusCount = 6; // all possible warnings in coverage
 
 export type ID = string
 export type Location = `${string}:${string}:${string}:${string}:${string}`
@@ -136,5 +130,5 @@ export type ReactionLogObj = {
 export type TryCatchLogVal = {
     iid: number,
     location: Location,
-    wasExceptionalCtrlFlowObserved: boolean
+    // wasExceptionalCtrlFlowObserved: boolean
 }

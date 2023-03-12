@@ -1,18 +1,12 @@
 {
-	"name": "coverage-as-promised",
-	"description": "VSCode extension for promise coverage",
+	"name": "jscope",
+	"description": "VSCode extension for async coverage",
 	"version": "0.0.1",
 	"publisher": "mohganji",
 	"engines": {
 		"vscode": "^1.32.0"
 	},
-	"activationEvents": [
-		"onCommand:cap.run-coverage",
-		"onCommand:cap.annotate-editor",
-		"onView:cap-view-container",
-		"onView:cap-tree-view",
-		"onView:cap-config-webview"
-	],
+	"activationEvents": [],
 	"main": "./out/extension.js",
 	"contributes": {
 		"productIconThemes": [
@@ -25,66 +19,36 @@
 		"viewsContainers": {
 			"activitybar": [
 				{
-					"id": "cap-view-container",
-					"title": "Async Coverage",
+					"id": "jscope-icon-menu",
+					"title": "JScope",
 					"icon": "media/area.png"
 				}
 			]
 		},
 		"commands": [
 			{
-				"command": "cap.run-coverage",
+				"command": "jscope.new-coverage",
 				"title": "JScope:Run Promise Coverage"
 			},
 			{
-				"command": "cap.annotate-editor",
+				"command": "jscope.annotate-editor",
 				"title": "JScope: Annotate open editor"
 			},
 			{
-				"command": "cap.peek-promise-action",
-				"title": "JScope: Show more information for promise"
-			},
-			{
-				"command": "cap-config.update-config",
-				"category": "JScope: Update Config",
-				"title": "Update Promise Coverage Configurations",
-				"icon": "$(clear-all)"
-			},
-			{
-				"command": "right-click-menu.open-call-location",
+				"command": "jscope.peek-references",
 				"title": "Open Promise References"
 			},
 			{
-				"command": "right-click-menu.open-links",
+				"command": "jscope.peek-links",
 				"title": "Show Links"
-			},
-			{
-				"command": "right-click-menu.show-all-executions",
-				"title": "Show All Executions"
 			}
 		],
 		"views": {
-			"cap-view-container": [
+			"jscope-icon-menu": [
 				{
-					"id": "cap-config-webview",
+					"id": "jscope.main-menu-webview",
 					"type": "webview",
-					"name": "Configure Promise Tree"
-				},
-				{
-					"id": "cap-tree-view",
-					"name": "Promise Coverage view"
-				},
-				{
-					"id": "call-references-tree-view",
-					"name": "References"
-				}
-			]
-		},
-		"menus": {
-			"view/item/context": [
-				{
-					"command": "right-click-menu.show-all-executions",
-					"when": "viewItem == ReactionNode"
+					"name": "Main Menu"
 				}
 			]
 		}
@@ -120,9 +84,12 @@
 	},
 	"dependencies": {
 		"@vscode/test-electron": "^1.6.2",
+		"bluebird": "^3.7.2",
 		"glob": "^7.2.0",
 		"istanbul": "^0.4.5",
 		"nyc": "^15.1.0",
+		"shelljs": "^0.8.5",
+		"simple-json-log": "^0.6.2",
 		"vscode-test": "^1.6.1"
 	}
 }

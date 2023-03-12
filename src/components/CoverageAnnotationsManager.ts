@@ -1,18 +1,20 @@
 import * as vscode from 'vscode'
 import Logger from './Logger';
-import { COMMAND_IDS, CoverageStatusTypeFlattened, COVERAGE_TYPE, PInfo, PMap, P_TYPE } from './constants';
+import { COMMAND_IDS, CoverageStatusCount, CoverageStatusTypeFlattened, COVERAGE_TYPE, PInfo, PMap, P_TYPE } from './constants';
 import { DECORATION_TYPES, Decoration, Decorations } from './decorations';
 import { Coverage } from './Coverage';
-import CoverageReportProvider from './CoverageReportProvider';
 import CoverageHelper from './CoverageHelper';
-import { findClosingBracketMatchIndex, updateStartLocation } from './utils';
+import { capitalize, findClosingBracketMatchIndex, updateStartLocation } from './utils';
 import {convertLocationToUriAndRange, isInUri} from './vscode-utils'
 import CLIReporter from './CLIReporter';
+
+const newline = `  \n`
 
 export default class CoverageAnnotationsManager {
 
     private static instance: CoverageAnnotationsManager | undefined;
     private coverage: Coverage | undefined;
+    
 
     async annotate(): Promise<vscode.Disposable | void> {
         const editor = vscode.window.activeTextEditor;
@@ -54,7 +56,8 @@ export default class CoverageAnnotationsManager {
             
             // For promise.then and promise.catch, only highlight the location of the .then
             // or .catch part, not the whole promise chain.
-            if([P_TYPE.PromiseCatch, P_TYPE.PromiseThen].includes(val['type'])) {
+            if([P_TYPE.PromiseCatch, P_TYPE.PromiseThen].includes(val['type']) 
+            && (val['code'].includes('.then') || val['code'].includes('.catch'))) {
                 
                 let closingInd = findClosingBracketMatchIndex(val['code'], val['code'].length - 1, true)
                 if(closingInd !== -1) {
@@ -79,15 +82,6 @@ export default class CoverageAnnotationsManager {
                     hoverMessage: this.getHoverMessage(val, promiseCovStatus)
                 }]
             }
-            // new AsyncStmtTreeItem({
-            //     label: label, 
-            //     location: loc, 
-            //     children: [], // this.createChildrenForTreeItem(val, functionsMap),
-            //     promiseInfo: val,
-            //     iconPath: this._getCoverageIconForPromise(coverage),
-            //     coverageStatus: coverage,
-            //     coverageType: this._getCoverageType(),
-            // })
 
         })
         return decorations;
@@ -108,17 +102,22 @@ JScope: ${pInfo.type}@${pInfo.location.slice(pInfo.location.indexOf(':')+1)}
 
         if(pInfo.refs.length) {
             tooltip.appendMarkdown(
-                `> [Open References](command:${COMMAND_IDS.MENU__OPEN_CALL_LOCATION}?${encodeURIComponent(JSON.stringify({refs: pInfo.refs.length > 5 ? pInfo.refs.slice(0, 5) : pInfo.refs, location: pInfo.location}))})  \n`
+                `> [Open References](command:${COMMAND_IDS.PEEK_MENU_REFERENCES}?${encodeURIComponent(JSON.stringify({refs: pInfo.refs.length > 5 ? pInfo.refs.slice(0, 5) : pInfo.refs, location: pInfo.location}))})  \n`
             )
         }
         if(pInfo.links.length) {
             tooltip.appendMarkdown(
-                `> [Open Links](command:${COMMAND_IDS.MENU__OPEN_LINKS}?${encodeURIComponent(JSON.stringify({links: pInfo.links.length > 5 ? pInfo.refs.slice(0, 5) : pInfo.links, location: pInfo.location}))})  \n`
+                `> [Open Links](command:${COMMAND_IDS.PEEK_MENU_LINKS}?${encodeURIComponent(JSON.stringify({links: pInfo.links.length > 5 ? pInfo.refs.slice(0, 5) : pInfo.links, location: pInfo.location}))})  \n`
             )
         }
         
         // @ts-ignore
-        Object.keys(promiseCovStatus).filter((k: string) => promiseCovStatus[k] === false).forEach(k => {
+        let warns = Object.keys(promiseCovStatus).filter((k: string) => promiseCovStatus[k] === false)
+        if(!warns.length) warns.push('full')
+        else if(warns.length === CoverageStatusCount) {
+            tooltip.appendMarkdown(`${newline}- Promise not settled and has no reactions.  \n  Maybe you forgot to use \`await\` or \`.then()\`?`)
+        }
+        else warns.forEach(k => {
             // @ts-ignore
             tooltip.appendMarkdown(this._getActionMessageForReaction(pInfo, k))
         })
@@ -126,14 +125,16 @@ JScope: ${pInfo.type}@${pInfo.location.slice(pInfo.location.indexOf(':')+1)}
     }
 
     private _getActionMessageForReaction(pinfo: PInfo, flattenedKey: string) {
-        let newline = `  \n`
+        
+        if(flattenedKey === 'full')
+            return ``
         let [covType, covReaction] = flattenedKey.split('_')
         if (covType === COVERAGE_TYPE.settle) {
-            return `${newline}- Promise never \`${covReaction}ed\`. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
+            return `${newline}- Promise never ${covReaction}ed.`
         } else if (covType === COVERAGE_TYPE.register) {
-            return `${newline}- No \`${covReaction}\` reaction registered. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
+            return `${newline}- Missing ${covReaction.replace('reject', 'error')} handler.`
         }  else { // if (covType === COVERAGE_TYPE.execute) {
-            return `${newline}- No \`${covReaction}\` reaction executed. [Possible actions](command:${CoverageAnnotationsManager.peekCommandId}?${pinfo.id})`
+            return `${newline}- ${capitalize(covReaction.replace('reject', 'error'))} handler not executed.`
         }
     }
 
@@ -173,33 +174,6 @@ JScope: ${pInfo.type}@${pInfo.location.slice(pInfo.location.indexOf(':')+1)}
     async clearCoverage() {
         this.coverage?.clear()
         await this.annotate()
-    }
-
-    // Promise suggested actions. for uncovered parts.
-    static peekCommandId = COMMAND_IDS.PEEK__PROMISE_ACTION;
-    async onPeekActionHandler(pid: string) {
-        const editor = vscode.window.activeTextEditor;
-        Logger.log(`peeking information for ${pid} ${editor}`)
-        if(!editor) return
-        if(!this.coverage) return
-        const promiseMap = await this.coverage.getPromiseMap()
-        let loc = promiseMap[pid].location
-        const {range, uri} = convertLocationToUriAndRange(loc)
-        // /**
-        //  *  uri - The text document in which to start
-        //     position - The position at which to start
-        //     locations - An array of locations.
-        //     multiple - Define what to do when having multiple results, either peek, gotoAndPeek, or `goto
-        //  */
-        let success = await vscode.commands.executeCommand(
-            'editor.action.peekLocations', 
-            uri, 
-            range.start, 
-            [new vscode.Location(uri, range)], 
-            'peek',
-            'No actions required.'
-        )
-        Logger.log(`command success: ${success}`)
     }
 
 }

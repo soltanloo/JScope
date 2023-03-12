@@ -1,32 +1,21 @@
-# Javascript Async Coverage VScode Extension
+# JScope – Javascript Async Coverage VScode Extension
 
-## Instructions for internal use:
+Cite [here](http://#TODO:acm-dl-virtual-machine).
 
-1. Clone the project and switch to `internal` branch:
-```sh
-git checkout internal
-```
+Related paper: [Code Coverage Criteria for Asynchronous Programs](#TODO:-doi).
 
-2. Install dependencies and build the project using the command below:
-```sh
-npm run build
-```
+Install the standalone extension from the [VScode extensions marketplace](#TODO:-link-to-extension-marketplace.).
 
-2. Run the extension pressing `f5` key or by clicking on the Run Extension button from the `Run and Debug` panel on the left sidebar, as shown in the image below:
-![screenshot 1](media/readme-screenshot1.png)
+## For researchers and maintainers.
 
-3. Clone [benchmark projects listed below](#benchmark-projects) on your machine and add them to the workspace that opens up, containing our extension.
-![screenshot 2](media/readme-screenshot2.png)
-box (1) shows open projects in this vscode window, you can add a new folder to workspace by right clicking on the side panel and selecting `Add folder to workspace` option.
+[developer's guide](docs/developers-guide.md) –
+If you want to build, test, or extend JScope. 
+Contains information about the components of JScope, how to install the dependencies, and how to build and run the extension in debug mode.
 
-4. Select the coverage extension from the left sidebar and click on `New Coverage` button. Then select a project and wait for the promise tree to be updated.
-![screenshot 3](media/readme-screenshot3.png)
+See [benchmarks](docs/benchmarks.md), [case studies](docs/case-studies.md), and [user study](docs/user-study.md) for details on the evaluations presented in the paper.
 
+## For developers and users.
 
-### <a name="benchmark-projects">Here is the list of currently available benchmark projects</a>
+You can find and install the standalone extension in the [VSCode extensions marketplace](#TODO:)
 
-* `node-fetch`: [github link](https://github.com/node-fetch/node-fetch) - Clone the repo, run `git checkout 1028f83`. Then run `npm i`.
-* `honoka`: [github link](https://github.com/kokororin/honoka.git) - Clone the repo, run `git checkout 6c6ed2a`. Then run `npm i; npm run build`.
-* `controlled-promise`: [github link](https://github.com/vitalets/controlled-promise.git). - Clone the repo, run `git checkout a218f82`. Then run `npm i`;
-* `promise-coverage-tests`: [github link](https://github.com/MohGanji/promise-coverage-tests)
-* `fetchr`: [github link](https://github.com/yahoo/fetchr.git) - partial logs
+[how to use](docs/how-to-use.md) – to learn what JScope does, what asynchronous coverage means, and how to properly use this extension.

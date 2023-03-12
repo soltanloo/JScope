@@ -22,7 +22,7 @@ export default class CLIReporter {
     }
 
     static async generateReport(cov: Coverage): Promise<void> {
-        Logger.clear()
+        await Logger.clear()
         const promiseMap = await cov.getPromiseMap()
         const functionsMap = await cov.getFunctionsMap()
         const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)
@@ -32,18 +32,20 @@ export default class CLIReporter {
         Logger.report(`${coverageReport}`)
                 
         Logger.report(`----------`)
-        Logger.report(`Promise Report:`)
-        Object.values(promiseMap).forEach((pInfo: PInfo) => {
-            Logger.report(`    p${pInfo.id} - ${pInfo.type} @ ${pInfo.location}`)
-            const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(pInfo)
-            const s = promiseCovStatus
-            const n = Number
-            Logger.report(`    ${n(s.settle_fulfill)}${n(s.register_fulfill)}${n(s.execute_fulfill)}\n    ${n(s.settle_reject)}${n(s.register_reject)}${n(s.execute_reject)}`)
+//         Logger.report(`Promise Report:`)
+//         Object.values(promiseMap).forEach((pInfo: PInfo) => {
+//             Logger.report(`    p${pInfo.id} - ${pInfo.type} @ ${pInfo.location}`)
+//             const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(pInfo)
+//             const s = promiseCovStatus
+//             const n = (v: any) => v === null ? 'N' : Number(v)
+//             Logger.report(
+// `    ${n(s.settle_fulfill)}${n(s.register_fulfill)}${n(s.execute_fulfill)}
+//     ${n(s.settle_reject)}${n(s.register_reject)}${n(s.execute_reject)}`)
         
-            // const unCoveredCount = Object.values(promiseCovStatus).filter(v => v === false).length
-        })
+//             // const unCoveredCount = Object.values(promiseCovStatus).filter(v => v === false).length
+//         })
 
-        Logger.report(`----------`)
+//         Logger.report(`----------`)
         Logger.report(`Warns:`)       
         let warns: String[] = Object.values(promiseMap).flatMap((pInfo: PInfo) => {
             const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(pInfo)

@@ -1,11 +1,13 @@
 import { Uri } from "vscode";
 import * as vscode from "vscode";
+import * as path from "path";
 import { sh } from "./sh";
 import { ANALYSIS_PATHS, DEPLOY_ENV, TestFrameworkEnum } from "./constants";
 import { WorkspacePicker } from "./WorkspacePicker";
-import { PromiseTreeProvider } from "./PromiseTreeProvider";
 import Logger from "./Logger";
 import CoverageAnnotationsManager from "./CoverageAnnotationsManager";
+import * as BaseRuntimeConfig from '../jscope-config.json'
+import RuntimeConfig from "./RuntimeConfig";
 
 /**
  * Runs the dynamic analysis and creates a log file as output.
@@ -47,7 +49,6 @@ export class Analyzer {
      * @returns logFileUri - a uri pointing to a logfile that is created containing analysis output logs
      */
     async runAnalysis(): Promise<undefined> {
-        // return Uri.file(`/Users/m0hammad/SFU/pc-promisecover/benchmark-logs/node-promise-mysql/node-promise-mysql.log`)
         if(!this.workspace) {
             if(vscode.workspace.workspaceFolders === undefined) {
                 const message = "> No open workspace found, open a folder an try again" ;
@@ -68,26 +69,39 @@ export class Analyzer {
             outputLogUri = Uri.file(logPath)
         }
         else if(DEPLOY_ENV === 'production') {
-            outputLogUri = Uri.file(`${ANALYSIS_PATHS.TMP_LOG_DIR}/${nameOfLogFile}`)
+            const logs_dir = path.resolve(path.join(__dirname, ANALYSIS_PATHS.TMP_LOG_DIR))
+            outputLogUri = Uri.file(path.join(logs_dir, nameOfLogFile))
             Logger.log(`> Running analysis on ${this.workspace.name}`) 
 
-            await Analyzer.createLogDirIfNotExist(ANALYSIS_PATHS.TMP_LOG_DIR)
+            await Analyzer.createLogDirIfNotExist(logs_dir)
 
-            const testFramework = await Analyzer.askForTestFramework();
+            const appConfig = new RuntimeConfig(this.workspace.uri)
+            const testFramework = appConfig.testFramework || BaseRuntimeConfig.default_test_framework
+            Logger.report(`debug  testFramework: ${testFramework}`)
+
+            const testSubdir = appConfig.testSubdir || BaseRuntimeConfig.default_test_subdir
+            Logger.report(`debug  testSubdir: ${testSubdir}`)
+
+            const testRegex = appConfig.testRegex || BaseRuntimeConfig.default_test_regex
+            Logger.report(`debug  testRegex: ${testRegex}`)
+
             
             const extensionPath = this._extensionPath
             const cmd = Analyzer.createCommand( // TODO: use nodeprof_path to generalize
-                `"${extensionPath}/${ANALYSIS_PATHS.RUN_FMWK_CMD}"`,
-                `"${extensionPath}/${ANALYSIS_PATHS.FRAMEWORKS[testFramework]}"`,
-                `"${extensionPath}/${ANALYSIS_PATHS.ANALYSIS}"`,
-                `"${this.workspace.uri.path}/test"`, // TODO: detect directory of tests
+                `cd ${BaseRuntimeConfig.nodeprof_path} &&`,
+                `${extensionPath}/${ANALYSIS_PATHS.RUN_FMWK_CMD}`,
+                `${extensionPath}/${ANALYSIS_PATHS.FRAMEWORKS[testFramework]}`,
+                `${extensionPath}/${ANALYSIS_PATHS.ANALYSIS}`,
+                `${this.workspace.uri.path}/${testSubdir}`,
                 '>',
-                `"${outputLogUri.path}"`
-            )
+                `${outputLogUri.path}`
+            ) // TODO: fix runMocha and runTap.js file and regex selection
+             // TODO: clean up run_test_framework.sh and nodeprof.sh / Or generate the final command at once, so you can use run_test_framework as before...
             
             
             // vscode.window.showInformationMessage(`cmd: ${cmd}`);
-            Logger.log(`> cmd: ${cmd}`) 
+            Logger.report(`debug  cmd: ${cmd}`) 
+            Logger.report(`Running JScope, please wait...`)
             const {stdout, stderr} = await sh(cmd)
             // Logger.log(`> stdout: ${stdout}`) 
             // Logger.log(`> stderr: ${stderr}`) 
@@ -107,10 +121,10 @@ export class Analyzer {
         await this.runAnalysis();
     }
 
-    static async askForTestFramework(): Promise<TestFrameworkEnum> {
-        // TODO: Prompt user to select between 'tap' and 'mocha'
-        return TestFrameworkEnum.tap
-    }
+    // static async askForTestFramework(): Promise<TestFrameworkEnum> {
+    //     // TODO: Prompt user to select between 'tap' and 'mocha'
+    //     return TestFrameworkEnum.tap
+    // }
 
     static createCommand(...args: any[]) {
         return args.join(' ')

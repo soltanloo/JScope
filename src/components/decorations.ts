@@ -22,16 +22,16 @@ export const DECORATION_TYPES = {
 
     }),
     severity_1: window.createTextEditorDecorationType({
-        backgroundColor: "#c2c44b" + opacity,
-        overviewRulerColor: "#c2c44b" + opacity
+        backgroundColor: "#fecc5c" + opacity,
+        overviewRulerColor: "#fecc5c" + opacity
     }),
     severity_2: window.createTextEditorDecorationType({
-        backgroundColor: "#c47b4b" + opacity,
-        overviewRulerColor: "#c47b4b" + opacity,
+        backgroundColor: "#fd8d3c" + opacity,
+        overviewRulerColor: "#fd8d3c" + opacity,
         // fontWeight: "bolder",
     }),
     severity_3: window.createTextEditorDecorationType({
-        backgroundColor: "#c44b4b" + opacity,
-        overviewRulerColor: "#c44b4b" + opacity
+        backgroundColor: "#e31a1c" + opacity,
+        overviewRulerColor: "#e31a1c" + opacity
     }),
 }

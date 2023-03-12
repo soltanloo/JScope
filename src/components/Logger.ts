@@ -17,6 +17,7 @@ export default class Logger {
      * Use for debugging purposes only
      */
     public static log(str: string): void {
+        return
         if(!Logger._channel) {
             return console.log(`DEBUG: ${str}`)
         }
@@ -40,6 +41,7 @@ export default class Logger {
      * Use for printing report or other information for production.
      */
     public static report(str: string) {
+        // str = str.replace(/\/Users\/m0hammad\/SFU\/coverage\/benchmark_projects\//g, '')
         if(!Logger._channel) {
             return console.log(str)
         }
@@ -47,12 +49,12 @@ export default class Logger {
         Logger._channel.appendLine(str)
     }
 
-    public static clear() {
+    public static async clear() {
         if(!Logger._channel) {
             return console.clear()
         }
 
-        Logger._channel.clear()
+        return Logger._channel.clear()
     }
 
 }

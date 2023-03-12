@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import { CallReferencesTreeProvider } from "./CallReferencesTreeProvider"
 import { CoverageStatusType, CoverageStatusTypeFlattened, COVERAGE_TYPE, PInfo, PROMISE_OUTCOME, P_TYPE, ReactionLogObj } from "./constants"
 import Logger from "./Logger"
 import { convertLocationToUriAndRange } from './vscode-utils'
@@ -26,22 +25,27 @@ export default class CoverageHelper {
         return cov
     }
 
-    static getCoverageStatusForPromiseFlattened(item: any): CoverageStatusTypeFlattened {
-        // TODO: take into account semantics of promises as well.
-        let cov = {
-            // settle_fulfill: (/* [P_TYPE.PromiseReject].includes(item.type) ? null : */ !!item['settle']['fulfill'].length),
-            // settle_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['settle']['reject'].length),
-            // register_fulfill: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : */ !!item['register']['fulfill'].length),
-            // register_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['register']['reject'].length),
-            // execute_fulfill: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : */ !!item['execute']['fulfill'].length),
-            // execute_reject: (/* [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : */ !!item['execute']['reject'].length)
+    static ExcludeForType: {[id: string]: Array<string>} = {
+        settle_fulfill: [P_TYPE.PromiseReject],
+        settle_reject: [P_TYPE.PromiseCatch, P_TYPE.PromiseResolve],
+        register_fulfill: [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen],
+        register_reject: [P_TYPE.PromiseCatch, P_TYPE.PromiseResolve],
+        execute_fulfill: [P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen],
+        execute_reject: [P_TYPE.PromiseCatch, P_TYPE.PromiseResolve]
+    }
+    static coverageForReaction(p: any, type: COVERAGE_TYPE, fulfillOrReject: PROMISE_OUTCOME) : any {
+        return CoverageHelper.ExcludeForType[`${type}_${fulfillOrReject}`].includes(p.type) ? null : !!p[type][fulfillOrReject].length
+    }
 
-            settle_fulfill: ([P_TYPE.PromiseReject].includes(item.type) ? null : !!item['settle']['fulfill'].length),
-            settle_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['settle']['reject'].length),
-            register_fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['register']['fulfill'].length),
-            register_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['register']['reject'].length),
-            execute_fulfill: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseThen].includes(item.type) ? null : !!item['execute']['fulfill'].length),
-            execute_reject: ([P_TYPE.PromiseCatch, P_TYPE.PromiseReject, P_TYPE.PromiseResolve].includes(item.type) ? null : !!item['execute']['reject'].length)
+    static getCoverageStatusForPromiseFlattened(item: any): CoverageStatusTypeFlattened {
+        let reactionCov = CoverageHelper.coverageForReaction
+        let cov = {
+            settle_fulfill: reactionCov(item, COVERAGE_TYPE.settle, PROMISE_OUTCOME.fulfill),
+            settle_reject: reactionCov(item, COVERAGE_TYPE.settle, PROMISE_OUTCOME.reject),
+            register_fulfill: reactionCov(item, COVERAGE_TYPE.register, PROMISE_OUTCOME.fulfill),
+            register_reject: reactionCov(item, COVERAGE_TYPE.register, PROMISE_OUTCOME.reject),
+            execute_fulfill: reactionCov(item, COVERAGE_TYPE.execute, PROMISE_OUTCOME.fulfill),
+            execute_reject: reactionCov(item, COVERAGE_TYPE.execute, PROMISE_OUTCOME.reject),
         }
         return cov
     }

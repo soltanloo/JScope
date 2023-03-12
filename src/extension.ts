@@ -3,10 +3,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path'
 import { STORAGE_KEYS, COMMAND_IDS as IDS } from './components/constants';
-import { ConfigWebviewProvider } from './components/ConfigWebviewProvider';
+import { MainMenuProvider } from './components/MainMenuProvider';
 import { Analyzer } from './components/Analyzer';
 import Logger from './components/Logger';
-import { CallReferencesTreeProvider } from './components/CallReferencesTreeProvider';
 import CoverageAnnotationsManager from './components/CoverageAnnotationsManager';
 import PeekView from './components/PeekView';
 
@@ -20,33 +19,14 @@ export function activate(context: vscode.ExtensionContext) {
   // let promiseMap = JSON.parse(fs.readFileSync(datafile, 'utf8'))
   let workspaceDir: vscode.Uri;
   
-  // // PROMISE TREE PROVIDER 
-  // // context.extensionUri
-  // const promiseTreeProvider = PromiseTreeProvider.getInstance()
-  // const PromiseTreeView = vscode.window.createTreeView(IDS.PROMISE_TREE_VIEW, {
-  //   treeDataProvider: promiseTreeProvider
-  // });
-  // promiseTreeProvider.setTreeView(PromiseTreeView)
-  // context.subscriptions.push(PromiseTreeView)
-
-
-  // // References tree provider 
-  // const callReferencesTreeProvider = CallReferencesTreeProvider.getInstance()
-  // const CallReferenceTreeView = vscode.window.createTreeView(IDS.CALL_REFERENCES_TREE_VIEW, {
-  //   treeDataProvider: callReferencesTreeProvider
-  // })
-  // callReferencesTreeProvider.setTreeView(CallReferenceTreeView)
-  // context.subscriptions.push(CallReferenceTreeView);
-  
-  
-  // CONFIG WEBVIEW PROVIDER
-  const configWebviewProvider = new ConfigWebviewProvider(context.extensionUri);
-  context.subscriptions.push(vscode.window.registerWebviewViewProvider(IDS.PROMISE_TREE_CONFIG_WEBVIEW, configWebviewProvider));
+  // JScope Menu Provider
+  const mainMenuProvider = new MainMenuProvider(context.extensionUri);
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider(IDS.MAIN_MENU_WEBVIEW, mainMenuProvider));
 
 
   // Add Coverage Annotations for open editor command
   context.subscriptions.push(vscode.commands.registerCommand(IDS.ANNOTATE_EDITOR, async () => {
-    // await vscode.commands.executeCommand(IDS.RUN_COVERAGE);
+    // await vscode.commands.executeCommand(IDS.NEW_COVERAGE);
     await CoverageAnnotationsManager.get().annotate()
   }));
   
@@ -55,19 +35,8 @@ export function activate(context: vscode.ExtensionContext) {
     await CoverageAnnotationsManager.get().annotate()
   }) // try using vscode.workspace.onDidOpenTextDocument() if there are unexpected cases with this listener.
 
-  // // peek for suggested actions and more info on a promise.
-  // context.subscriptions.push(
-  //   vscode.commands.registerCommand(
-  //     CoverageAnnotationsManager.peekCommandId, 
-  //     async (pid) => {
-  //       await CoverageAnnotationsManager.get().onPeekActionHandler(pid)
-  //     }
-  //   )
-  // );
-
-
   // RUN PROMISE COVERAGE COMMAND
-  context.subscriptions.push(vscode.commands.registerCommand(IDS.RUN_COVERAGE, async () => {
+  context.subscriptions.push(vscode.commands.registerCommand(IDS.NEW_COVERAGE, async () => {
     // let nodeprofPath = await askForNodeprofPath(); // TODO:
     // nodeprofPath = path.resolve(nodeprofPath, 'nodeprof.jar')
     // await context.globalState.update(STORAGE_KEYS.NODEPROF_PATH, nodeprofPath)
@@ -78,33 +47,26 @@ export function activate(context: vscode.ExtensionContext) {
     await analyzer.runAnalysis();
   }));
 
-  // RIGHT CLICK MENU commands
-  // OPEN_USE_LOCATION
+  ///////////////
+  // Peek Views
+  
+  // Open References
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      IDS.MENU__OPEN_CALL_LOCATION, 
+      IDS.PEEK_MENU_REFERENCES, 
       PeekView.openReferences
     )
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      IDS.MENU__OPEN_LINKS, 
+      IDS.PEEK_MENU_LINKS, 
       PeekView.openLinks
     )
   );
-
-  // // RIGHT CLICK MENU commands
-  // // Show all executions
-  // context.subscriptions.push(
-  //   vscode.commands.registerCommand(
-  //     IDS.MENU__SHOW_ALL_ACTIONS, 
-  //     ReactionTreeItem.showAllExecutions
-  //   )
-  // );
   
   
-  // TODO: Use this for adding diagnostics on promises. https://raw.githubusercontent.com/microsoft/vscode-extension-samples/main/diagnostic-related-information-sample/src/extension.ts
+  // Use this for adding diagnostics on promises. https://raw.githubusercontent.com/microsoft/vscode-extension-samples/main/diagnostic-related-information-sample/src/extension.ts
 
   // context.subscriptions.push(vscode.languages.registerHoverProvider('typescript', new PromiseHoverProvider()));
   // context.subscriptions.push(vscode.languages.registerHoverProvider('javascript', new PromiseHoverProvider()));
