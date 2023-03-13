@@ -4,7 +4,7 @@
 # More info at https://github.com/Haiyang-Sun/nodeprof.js/blob/master/README.md
 # If your default version of java is 1.8.0 then ignore this
 # javaHome="/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home"
-# javaHome="$HOME/.mx/jdks/labsjdk-ce-11-jvmci-22.2-b03/Contents/Home"
+javaHome="$HOME/.mx/jdks/labsjdk-ce-11-jvmci-22.2-b03/Contents/Home"
 
 nodeprof () { 
     if [ "$#" -lt "4" ]; then
