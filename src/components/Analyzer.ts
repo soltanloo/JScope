@@ -60,7 +60,7 @@ export class Analyzer {
             await wp.pick()
             return
         }
-
+        await Logger.clear()
         const nameOfLogFile = `${this.workspace.name}.log`
         let outputLogUri
         if(DEPLOY_ENV === 'internal') {
@@ -71,41 +71,34 @@ export class Analyzer {
         else if(DEPLOY_ENV === 'production') {
             const logs_dir = path.resolve(path.join(__dirname, ANALYSIS_PATHS.TMP_LOG_DIR))
             outputLogUri = Uri.file(path.join(logs_dir, nameOfLogFile))
-            Logger.log(`> Running analysis on ${this.workspace.name}`) 
+            Logger.report(`> Instrumenting ${this.workspace.name}. Please wait...`)             
 
             await Analyzer.createLogDirIfNotExist(logs_dir)
 
             const appConfig = new RuntimeConfig(this.workspace.uri)
-            const testFramework = appConfig.testFramework || BaseRuntimeConfig.default_test_framework
-            Logger.report(`debug  testFramework: ${testFramework}`)
-
-            const testSubdir = appConfig.testSubdir || BaseRuntimeConfig.default_test_subdir
-            Logger.report(`debug  testSubdir: ${testSubdir}`)
-
-            const testRegex = appConfig.testRegex || BaseRuntimeConfig.default_test_regex
-            Logger.report(`debug  testRegex: ${testRegex}`)
-
+            Logger.report(`Project Configuration: ${JSON.stringify(appConfig, null, 2)}`)
             
             const extensionPath = this._extensionPath
-            const cmd = Analyzer.createCommand( // TODO: use nodeprof_path to generalize
+            const cmd = Analyzer.createCommand(
                 `cd ${BaseRuntimeConfig.nodeprof_path} &&`,
-                `${extensionPath}/${ANALYSIS_PATHS.RUN_FMWK_CMD}`,
-                `${extensionPath}/${ANALYSIS_PATHS.FRAMEWORKS[testFramework]}`,
+                `${extensionPath}/${ANALYSIS_PATHS.NODEPROF_CMD}`,
                 `${extensionPath}/${ANALYSIS_PATHS.ANALYSIS}`,
-                `${this.workspace.uri.path}/${testSubdir}`,
+                `${extensionPath}/${ANALYSIS_PATHS.FRAMEWORKS[appConfig.testFramework]}`,
+                `${path.join(this.workspace.uri.path, appConfig.testSubdir)}`,
+                `__SALT__${appConfig.testRegex}__SALT__`, // SALT is added to avoid bash to expand the regex before passing it as argument
                 '>',
                 `${outputLogUri.path}`
-            ) // TODO: fix runMocha and runTap.js file and regex selection
-             // TODO: clean up run_test_framework.sh and nodeprof.sh / Or generate the final command at once, so you can use run_test_framework as before...
+            )
             
             
             // vscode.window.showInformationMessage(`cmd: ${cmd}`);
-            Logger.report(`debug  cmd: ${cmd}`) 
-            Logger.report(`Running JScope, please wait...`)
+            Logger.log(`cmd: ${cmd}`) 
+            Logger.report(`Running tests. Please wait...`)
+            Logger.report(`> Logs are recorded at ${outputLogUri}`) 
             const {stdout, stderr} = await sh(cmd)
             // Logger.log(`> stdout: ${stdout}`) 
             // Logger.log(`> stderr: ${stderr}`) 
-            Logger.log(`> Finished running analysis for ${this.workspace.name}`) 
+            Logger.report(`> Finished analysis for ${this.workspace.name}`) 
             Logger.log(`> output URI: ${outputLogUri.path}`)
         }
 

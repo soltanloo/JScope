@@ -1,14 +1,20 @@
 import * as vscode from 'vscode'
 
+const LOG_LEVEL = {
+    DEBUG: 1,
+    REPORT: 2
+}
 /**
  * Uses vscode OutputChannel to create a logger for this extension.
  * Needs to be initialized once, using init(channel) function.
  */
 export default class Logger {
     private static _channel: vscode.OutputChannel;
+    private static _level: number;
 
-    public static init(channel: vscode.OutputChannel) {
+    public static init(channel: vscode.OutputChannel, level = LOG_LEVEL.REPORT) {
         Logger._channel = channel
+        Logger._level = level
     }
 
     private constructor() {}
@@ -17,7 +23,7 @@ export default class Logger {
      * Use for debugging purposes only
      */
     public static log(str: string): void {
-        return
+        if (this._level > LOG_LEVEL.DEBUG) return
         if(!Logger._channel) {
             return console.log(`DEBUG: ${str}`)
         }
@@ -42,6 +48,7 @@ export default class Logger {
      */
     public static report(str: string) {
         // str = str.replace(/\/Users\/m0hammad\/SFU\/coverage\/benchmark_projects\//g, '')
+        if (this._level > LOG_LEVEL.REPORT) return
         if(!Logger._channel) {
             return console.log(str)
         }

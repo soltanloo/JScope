@@ -25,7 +25,7 @@ export const COMMAND_IDS = {
 
 export const ANALYSIS_PATHS = {
     ANALYSIS:  'instrumentation/analysis.js',
-    RUN_FMWK_CMD:  'instrumentation/run_test_framework.sh',
+    NODEPROF_CMD:  'instrumentation/nodeprof.sh',
     FRAMEWORKS: {
         'mocha': 'instrumentation/runMocha.mjs',
         'tap':   'instrumentation/runTap.js',

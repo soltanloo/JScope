@@ -22,7 +22,6 @@ export default class CLIReporter {
     }
 
     static async generateReport(cov: Coverage): Promise<void> {
-        await Logger.clear()
         const promiseMap = await cov.getPromiseMap()
         const functionsMap = await cov.getFunctionsMap()
         const coverageReport = CoverageReportProvider.getCoverageSummary(promiseMap, functionsMap)

@@ -34,7 +34,7 @@ export class MainMenuProvider implements vscode.WebviewViewProvider {
 		webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
 		webviewView.webview.onDidReceiveMessage(data => {
-			Logger.log('New Message Received:')
+			Logger.log('New Coverage:')
 			Logger.log(JSON.stringify(data))
 			// Called through vscode.postMessage({ type: 'colorSelected', value: color }); in the JS files when run in extension.
 			switch (data.type) {

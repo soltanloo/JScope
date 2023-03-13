@@ -1,19 +1,13 @@
 ## Instructions
-TODO: go through the files copied here, and try to run one project using these files, for both tap and mocha.
-if succeeded, 
-    - remove the extra repo, 
-    - complete the readme
 
+JScope uses these scripts to programmatically instrument the programs using Nodeprof.js.
+In order for JScope to work, you need to install the dependencies described in the project's readme file.
+These dependencies include nodeprof, graal, and mx. To see how to install these, follow the [tutorial on Nodeprof.js github page](https://github.com/Haiyang-Sun/nodeprof.js/blob/master/Tutorial.md).
 
-0. what these files are for.
-1. install dependencies [nodeprof, graal, mx]
-2. how to use the scripts manually [through terminal]
+## Debugging
 
+In case of any problems, you can try one of the following:
 
-1. Install nodeprof.js
-2. Install graal.js
-3. Look at `nodeprof.sh` in this repository and set the variables as described.
-4. make all three `.sh` files(`nodeprof.sh`, `run_tests.sh`, `run_mocha.sh`) runnable using `chmod +x {filename}.sh`
-5. To run tests for analysis, run `./run_tests.sh $PWD/src/analysis.js testName` where testName is the name of a file in units directory (e.g. `./run_tests.sh $PWD/src/analysis.js awaitNoCatch`)
-6. To run the analysis on the test suites of other projects that use mocha as their test frameworks, run `./run_mocha.sh $PWD/src/analysis.js /path/to/project/test/directory`
-
+- Look at `nodeprof.sh` in this directory and update the javaHome variable as explained.
+- Run `chmod +x nodeprof.sh` to make `nodeprof.sh` executable.
+- Install and run [a different version of GraalVM](https://www.graalvm.org/downloads/)
