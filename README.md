@@ -11,7 +11,7 @@ Related paper: [Code Coverage Criteria for Asynchronous Programs](#TODO:-doi).
 1. Install global dependencies. To use JScope, you need these installed on your machine:
     - [Visual Studio Code](https://code.visualstudio.com/download)
     - [Typescript](https://www.typescriptlang.org/download)
-    - [Nodeprof.js](https://github.com/Haiyang-Sun/nodeprof.js): Follow the repository's readme up to a point where you can succesfully run Nodeprof.js.
+    - [Nodeprof.js](https://github.com/Haiyang-Sun/nodeprof.js): Follow the repository's readme up to a point where you can succesfully run Nodeprof.js. See [instrumentation/README.md](instrumentation/README.md) for more details on how we use Nodeprof.js.
 
 2. Configuration
     - Open [`src/jscope-config.json`](src/jscope-config.json) and set `nodeprof_path` to the directory of nodeprof you installed from step 1.
