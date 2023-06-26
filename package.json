@@ -1,5 +1,9 @@
 {
 	"name": "jscope",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/mohganji/jscope"
+	},
 	"description": "VSCode extension for async coverage",
 	"version": "0.0.1",
 	"publisher": "mohganji",

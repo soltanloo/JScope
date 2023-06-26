@@ -22,18 +22,22 @@ Related paper: [Code Coverage Criteria for Asynchronous Programs](#TODO:-doi).
 
 ## Running JScope in debug mode
 
-See below video for how to run and use JScope.
-TODO: Create a GIF on a sample execution of JScope.
+After building the project, you can run JSCope by clicking on the
+"Run extension" button from the "Run and debug" panel in VSCode. (You can also use the F5 shortcut as well)
 
-Now you can run JScope using the run & debug panel in VScode.
+![Step1](./media/step1.png)
 
-Next click on the play button followed by "Run Extension" (You can also use the F5 shortcut as well).
+![Step2](./media/step2.png)
 
-A new VSCode window will show up, which has JScope installed. 
+A new VSCode window will appears, which has JScope installed. 
 
 To measure coverage for any repository, it should be added to the current VSCode workspace, right click on the side panel, click "Add Folder to Workspace" and add your desired node.js project.
 
+![Step3](./media/step3.png)
+
 Now select the P icon on the primary sidebar. It should open Jscope's menu.
+
+![Step4](./media/step4.png)
 
 From there, select the "New Coverage" Button, and select a project from the drop-down menu that appears.
 
