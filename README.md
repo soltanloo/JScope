@@ -15,7 +15,7 @@ Related paper: [Code Coverage Criteria for Asynchronous Programs](#TODO:-doi).
 
 2. Configuration
     - Open [`src/jscope-config.json`](src/jscope-config.json) and set `nodeprof_path` to the directory of nodeprof you installed from step 1.
-    - Open [`instrumentation/nodeprof.sh`](instrumentation/nodeprof.sh) and update `javaHome` variable to point to a GraalVM-compatible version. You either had it installed on your machine, or freshly installed another version, updated `javaHome` variable accordingly.
+    - Open [`instrumentation/nodeprof.sh`](instrumentation/nodeprof.sh) and update `javaHome` variable to point to a GraalVM-compatible version. You either had it installed on your machine, or freshly installed another version, updated `javaHome` variable accordingly. You should also add path/to/mx directory to your path in the same file.
      
 3. Compile. 
     - Run `npm run build` to install packages used in JScope, and compile the typescript project.

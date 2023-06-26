@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# TODO: After installing MX, add it to path here. 
+# You may also add it to your .bashrc so that it is available everywhere
+PATH="<dir/to/mx>:$PATH" 
+
 # Set javaHome variable to the home directory of JDK 1.8.0 or a version compatible with graalVM
 # More info at https://github.com/Haiyang-Sun/nodeprof.js/blob/master/README.md
 # If your default version of java is 1.8.0 then ignore this
