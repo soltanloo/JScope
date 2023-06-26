@@ -157,6 +157,7 @@ export class Coverage {
                     promiseMap[id].pids.push(log.cid)
                     promiseMap[id]._parents.push(log.base && log.base.__cid ? log.base.__cid : null)
                     promiseMap[id]._types.push(log.ftype)
+                    if(log.executorFid) promiseMap[id].executorFids.push(log.executorFid)
                     // promiseMap[id]._logs.push(log)
                 } else if(this.getIdByPid(log.cid) && this.getIdByPid(log.cid) !== id) {
                     // cases for adding to refs. Where cid exists(in pidToIdMap), 
@@ -169,6 +170,7 @@ export class Coverage {
                         id: id,
                         location: log.location,
                         iid: log.iid,
+                        executorFids: log.executorFid ? [log.executorFid] : [],
                         refs: [],
                         pids: [log.cid],
                         links: [],
@@ -403,11 +405,16 @@ export class Coverage {
             
             if ([LOG_TAGS.INVOKE_FUN].includes(log.tag) && log.warn === 'function exited') {
                 // Logger.log(`log of func invoke: ${JSON.stringify(log, null, 2)}`)
-                
+                if(!isObjectEmpty(log.exception)) {
+                    let promiseForThisExecutorFunction: any = Object.values(promiseMap).find((pInfo: any) => pInfo.executorFids.includes(log.fid))                
+                    if (promiseForThisExecutorFunction)
+                        promiseMap[promiseForThisExecutorFunction.id]['settle'][PROMISE_OUTCOME.reject].push(logVal)
+                }
+
                 if(!fidToPromiseMap.has(log.fid)) return;
                 // @ts-ignore
                 fidToPromiseMap.get(log.fid).map((key: string) => {
-                    // Logger.log(`adding settle reaction to this key: ${key} : ${JSON.stringify(promiseMap[key])}`)
+                    // Logger.log(`adding settle reaction to this key: ${key} : ${JSON.stringify(promiseMap[key])}, logVal: ${JSON.stringify(logVal)}`)
                     if(isObjectEmpty(log.exception))
                         promiseMap[key]['settle'][PROMISE_OUTCOME.fulfill].push(logVal)
                     else

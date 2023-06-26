@@ -124,6 +124,7 @@ const PROMISE_TYPES = helper.PROMISE_TYPES
         if (result && helper.isPromise(result) && !(helper.isRequire(f)) && !result.__coverage_wrapped) {
           logger.warn('Proxy not working, probably promise object was overwritten...', {
             cid: result.__cid,
+            executorFid: result.__executorFid,
             iid,
             fname: f.name,
             ftype: !!result.__ptype && ftype !== result.__ptype ? ftype : result.__ptype || ftype,
@@ -145,6 +146,7 @@ const PROMISE_TYPES = helper.PROMISE_TYPES
           logger.warn('new promise', {
             tag: 'new-promise',
             cid: result.__cid,
+            executorFid: result.__executorFid,
             iid,
             fname: f.name,
             ftypeOnly: ftype,
@@ -283,11 +285,12 @@ const PROMISE_TYPES = helper.PROMISE_TYPES
       
       let code = J$.iidToCode(iid)
       let f = functionsMap[iid]
-      if(f.__fid) { // TODO: DEBUG FOR OTHER FUNCTIONS AS TO SEE WHY THEY DON'T HAVE FID
+      if(f.__fid) {
         logger.warn('function exited', {
           iid,
           tag: 'function-invoke',
           returnVal: returnVal && returnVal.__coverage_wrapped ? helper.minimizePromise(returnVal) : 'N/A',
+          exception: wrappedExceptionVal,
           // exceptionVal: wrappedExceptionVal,// && wrappedExceptionVal.exception ? wrappedExceptionVal.exception : 'N/A',
           fid: f.__fid,
           code,
@@ -303,6 +306,7 @@ const PROMISE_TYPES = helper.PROMISE_TYPES
         })
         logger.warn('async function exited', {
           iid,
+          // tag: 'function-invoke',
           // tag: 'async-function-exit',
           returnVal: returnVal && returnVal.__coverage_wrapped ? helper.minimizePromise(returnVal) : 'N/A',
           exceptionVal: wrappedExceptionVal,

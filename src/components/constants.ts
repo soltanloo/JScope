@@ -101,6 +101,7 @@ export type PInfo = {
     id: ID,
     location: Location,
     iid: number,
+    executorFids: string[], // promises created using a constructor have this field, points to the executor function.
     refs: {id: ID, location: Location}[],
     pids: Pid[],
     links: {id: ID, location: Location}[],

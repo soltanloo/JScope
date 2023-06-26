@@ -8,11 +8,12 @@ global.__cid = 1
 global.__fid = 1
 // maybe create a mapping for each fid to its corresponding function and log it somewhere?
 
-function PromiseWrapper(p, ptype, cid) {
+function PromiseWrapper(p, ptype, cid, executorFid) {
   logger.debug('call to PromiseWrapper', {
     tag: 'PromiseWrapper',
     global_cid: __cid,
     cid: cid,
+    executorFid: executorFid,
     ptype: ptype,
     p: minimizePromise(p),
   })
@@ -23,6 +24,7 @@ function PromiseWrapper(p, ptype, cid) {
     cid = __cid++
   }
   if(!p.__cid) p.__cid = `p${cid}`
+  if(executorFid && !p.__executorFid) p.__executorFid = executorFid
   let realThen = p.then
   
   const fidForThenWrapper = `f${__fid++}`
@@ -196,6 +198,7 @@ let promiseWrapperHandlers = {
     // console.log('constructor', this, JSON.stringify(args))
     const currentCid = __cid++
     let originalCb = args[0]
+    originalCb.__fid = `f${__fid++}`
     if(typeof args[0] === 'function'){ 
       
       let wrappedCb = function() {
@@ -250,7 +253,7 @@ let promiseWrapperHandlers = {
     
     
     let p = new target(...args)
-    return PromiseWrapper(p, undefined, currentCid)
+    return PromiseWrapper(p, undefined, currentCid, originalCb.__fid)
   },
   get: function(target, prop, receiver) {
     // For capturing Promise.resolve, Promise.reject
