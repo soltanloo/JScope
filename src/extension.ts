@@ -40,10 +40,9 @@ export function activate(context: vscode.ExtensionContext) {
     // let nodeprofPath = await askForNodeprofPath(); // TODO:
     // nodeprofPath = path.resolve(nodeprofPath, 'nodeprof.jar')
     // await context.globalState.update(STORAGE_KEYS.NODEPROF_PATH, nodeprofPath)
-    let nodeprofPath = path.resolve('/Users/m0hammad/SFU/coverage/workspace-nodeprof/nodeprof.js', 'nodeprof.jar')
     Analyzer.destroyExisting()
     const analyzer = Analyzer.getInstance()
-    analyzer.init(context, nodeprofPath)
+    analyzer.init(context)
     await analyzer.runAnalysis();
   }));
 

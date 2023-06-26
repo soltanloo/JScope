@@ -47,7 +47,6 @@ export default class Logger {
      * Use for printing report or other information for production.
      */
     public static report(str: string) {
-        // str = str.replace(/\/Users\/m0hammad\/SFU\/coverage\/benchmark_projects\//g, '')
         if (this._level > LOG_LEVEL.REPORT) return
         if(!Logger._channel) {
             return console.log(str)

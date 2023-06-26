@@ -16,12 +16,10 @@ export class Analyzer {
     private static instance: Analyzer | undefined;
     
     workspace: vscode.WorkspaceFolder | undefined;
-    _nodeprofPath: string;
     _extensionPath: string;
 
     private constructor() {
         this._extensionPath = '';
-        this._nodeprofPath = '';
     }
 
     public static destroyExisting() {
@@ -36,9 +34,8 @@ export class Analyzer {
         return Analyzer.instance;
     }
 
-    init(context: vscode.ExtensionContext, nodeprofPath: string) {
+    init(context: vscode.ExtensionContext) {
         this._extensionPath = context.extensionPath;
-        this._nodeprofPath = nodeprofPath;
     }
 
     /**
@@ -97,7 +94,7 @@ export class Analyzer {
             Logger.report(`> Logs are recorded at ${outputLogUri}`) 
             const {stdout, stderr} = await sh(cmd)
             // Logger.log(`> stdout: ${stdout}`) 
-            // Logger.log(`> stderr: ${stderr}`) 
+            if (stderr) Logger.report(`> stderr: ${stderr}`) 
             Logger.report(`> Finished analysis for ${this.workspace.name}`) 
             Logger.log(`> output URI: ${outputLogUri.path}`)
         }
