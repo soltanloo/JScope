@@ -1,11 +1,5 @@
 # JScope – Javascript Async Coverage VScode Extension
 
-Cite [here](http://#TODO:acm-dl-virtual-machine).
-
-Related paper: [Code Coverage Criteria for Asynchronous Programs](#TODO:-doi).
-
-<!-- Install the standalone extension from the [VScode extensions marketplace](#TODO:-link-to-extension-marketplace.). -->
-
 ## Getting Started
 
 1. Install global dependencies. To use JScope, you need these installed on your machine:
@@ -39,14 +33,17 @@ Now select the P icon on the primary sidebar. It should open Jscope's menu.
 
 ![Step4](./media/step4.png)
 
-From there, select the "New Coverage" Button, and select a project from the drop-down menu that appears.
+Before running JScope on any project, create a `jscope.json` file in the top level directory of the repository.
+Fill in the `jscope.json` using the sample provided in [src/jsope.json.sample](./src/jscope.json.sample).
 
+If a `jscope.json` file does not exist, JScope will use the default configuration for a project as defined in [src/jscope-config.json](./src/jscope-config.json).
+It may fail to work properly if the test framework or test regex are not correctly defined for the project under test.
+
+Now you can select the "New Coverage" Button, and select a project from the drop-down menu that appears.
 Wait until instrumentation and calculation of the coverage. You can also see the logs in the debug console.
 
 
 ## For researchers and maintainers.
 
-- [Developer's guide](docs/developers-guide.md):
-If you want to build, test, or extend JScope. 
+- See [Developer's guide](docs/developers-guide.md) if you want to build, test, or extend JScope. 
 Contains information about the components of JScope.
-- [User study materials](https://github.com/MohGanji/jscope-user-study), including tasks and pre-questionnaire.

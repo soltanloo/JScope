@@ -8,6 +8,6 @@ These dependencies include nodeprof, graal, and mx. To see how to install these,
 
 In case of any problems, you can try one of the following:
 
-- Look at `nodeprof.sh` in this directory and update the javaHome variable as explained.
+- Look at `nodeprof.sh` in this directory and update the javaHome variable and add MX to the $PATH variable as explained.
 - Run `chmod +x nodeprof.sh` to make `nodeprof.sh` executable.
 - Install and run [a different version of GraalVM](https://www.graalvm.org/downloads/)

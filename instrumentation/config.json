@@ -1,10 +1,10 @@
 {
     "beforeOrAfter": "after",
-    "baseCmd": "/Users/m0hammad/SFU/r-promise-coverage/promise-coverage-vscode-ext/async-coverage/run_test_framework.sh",
-    "analysis": "/Users/m0hammad/SFU/r-promise-coverage/promise-coverage-vscode-ext/async-coverage/src/analysis.js",
-    "srcBaseDir": "/Users/m0hammad/SFU/r-promise-coverage/promise-coverage-vscode-ext/async-coverage/",
-    "benchmarkBaseDir": "/Users/m0hammad/SFU/coverage/benchmark_projects/",
-    "logDir": "/Users/m0hammad/SFU/r-promise-coverage/promise-coverage-vscode-ext/async-coverage/logs/",
+    "baseCmd": "PATH_TO_JSCOPE_DIR/instrumentation/run_test_framework.sh",
+    "analysis": "PATH_TO_JSCOPE_DIR/instrumentation/src/analysis.js",
+    "srcBaseDir": "PATH_TO_JSCOPE_DIR",
+    "benchmarkBaseDir": "PATH_TO_JSCOPE_DIR/benchmark_projects/",
+    "logDir": "PATH_TO_JSCOPE_DIR/instrumentation/logs/",
     "projects": {
         "node-oauth2-server": {
             "name": "node-oauth2-server",
