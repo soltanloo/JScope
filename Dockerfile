@@ -25,5 +25,6 @@ RUN mv nodeprof.jar graalvm-ce-java11-20.2.0/tools/nodeprof/
 RUN cp nodeprof.js/src/ch.usi.inf.nodeprof/js/jalangi.js graalvm-ce-java11-20.2.0/tools/nodeprof
 
 COPY . /app/jscope/
+WORKDIR /app/jscope/
 
 CMD ["tail", "-f", "/dev/null"]
