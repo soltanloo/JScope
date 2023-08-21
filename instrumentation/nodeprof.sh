@@ -2,13 +2,13 @@
 
 # TODO: After installing MX, add it to path here. 
 # You may also add it to your .bashrc so that it is available everywhere
-PATH="<dir/to/mx>:$PATH" 
+#PATH="<dir/to/mx>:$PATH"
 
 # Set javaHome variable to the home directory of JDK 1.8.0 or a version compatible with graalVM
 # More info at https://github.com/Haiyang-Sun/nodeprof.js/blob/master/README.md
 # If your default version of java is 1.8.0 then ignore this
 # javaHome="/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home"
-javaHome="$HOME/.mx/jdks/labsjdk-ce-11-jvmci-22.2-b03/Contents/Home"
+#javaHome="$HOME/.mx/jdks/labsjdk-ce-11-jvmci-22.2-b03/Contents/Home"
 
 nodeprof () { 
     if [ "$#" -lt "4" ]; then
@@ -35,7 +35,8 @@ nodeprof () {
     if test -d $javaHome; then
         export JAVA_HOME=$javaHome
     fi
-    cmd="mx jalangi --excl=\"node_modules,internal,spec,chai,css,promiseWrapper.js,test\" --scope=app --analysis \"${analysis}\" \"${runner}\" \"${testDir}\" \"${regex}\""
+#    cmd="mx jalangi --excl=\"node_modules,internal,spec,chai,css,promiseWrapper.js,test\" --scope=app --analysis \"${analysis}\" \"${runner}\" \"${testDir}\" \"${regex}\""
+    cmd="$GRAAL_HOME/bin/node --jvm --experimental-options --vm.Dtruffle.class.path.append=$GRAAL_HOME/tools/nodeprof.jar --nodeprof \"$NODEPROF_PATH/src/ch.usi.inf.nodeprof/js/jalangi.js\" --analysis ${analysis} ${runner} --nodeprof.ExcludeSource=\"node_modules,internal,spec,chai,css,promiseWrapper.js,test\" --nodeprof.Scope=app ${testDir} ${regex}"
     echo -e "$cmd"
     if [ "$#" -eq "5" ]; then
         eval "$cmd" | tee "${5}"
