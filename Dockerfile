@@ -26,5 +26,7 @@ RUN cp nodeprof.js/src/ch.usi.inf.nodeprof/js/jalangi.js graalvm-ce-java11-20.2.
 
 COPY . /app/jscope/
 WORKDIR /app/jscope/
+RUN npm install
+RUN npm run build
 
 CMD ["tail", "-f", "/dev/null"]
