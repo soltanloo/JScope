@@ -1,1 +1,9 @@
 node_modules
+bench.csv
+out
+.vscode-test
+async-coverage
+case-studies
+logs
+scripts
+jscope-anonymized.zip

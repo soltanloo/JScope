@@ -1,5 +1,5 @@
 {
-    "nodeprof_path": "/Users/m0hammad/SFU/fresh-nodeprof/workspace-nodeprof/nodeprof.js",
+    "nodeprof_path": "/app/nodeprof.js",
     "default_test_framework": "mocha",
     "default_test_subdir": "test",
     "default_test_regex": "*test*" 
