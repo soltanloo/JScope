@@ -12,9 +12,9 @@ import { sh } from "./components/sh"
  * @param path - path to a project directory you want to get coverage for. The path must have jscope.json
  */
 
-async function cli(projectPath: string) {
+async function cli(projectPath: string, projectName: string, relativePaths: boolean) {
     const logs_dir = path.resolve(path.join(__dirname, ANALYSIS_PATHS.TMP_LOG_DIR))
-    
+
     let outputLogPath = path.join(logs_dir, 'temp.log')
     console.log(`> Instrumenting ${projectPath}. Please wait...`)
 
@@ -36,9 +36,9 @@ async function cli(projectPath: string) {
         console.log('No runtime config provided, using default configuration.')
     }
     console.log(`Project Configuration: ${JSON.stringify(appConfig, null, 2)}`)
-    
+
     const extensionPath = path.join(__dirname, '..')
-    
+
     const cmd = [
         `cd ${BaseRuntimeConfig.nodeprof_path} &&`,
         `${extensionPath}/${ANALYSIS_PATHS.NODEPROF_CMD}`,
@@ -50,33 +50,38 @@ async function cli(projectPath: string) {
         '>',
         `${outputLogPath}`
     ].join(' ')
-    
-    
+
+
     // vscode.window.showInformationMessage(`cmd: ${cmd}`);
-    console.log(`cmd: ${cmd}`) 
+    console.log(`cmd: ${cmd}`)
     console.log(`Running tests. Please wait...`)
-    console.log(`> Logs are recorded at ${outputLogPath}`) 
-    const {stdout, stderr} = await sh(cmd)
-    // console.log(`> stdout: ${stdout}`) 
-    if (stderr) console.log(`> stderr: ${stderr}`) 
-    console.log(`> Finished analysis for ${projectPath}`) 
+    console.log(`> Logs are recorded at ${outputLogPath}`)
+    const { stdout, stderr } = await sh(cmd)
+    // console.log(`> stdout: ${stdout}`)
+    if (stderr) console.log(`> stderr: ${stderr}`)
+    console.log(`> Finished analysis for ${projectPath}`)
     console.log(`> output URI: ${outputLogPath}`)
 
 
 
     const cov = new Coverage(outputLogPath)
+    cov.setProjectInfo(projectPath, projectName, relativePaths);
     CLIReporter.generateReport(cov)
 }
 
-(async function() {
-    if(process.argv.length < 3) {
-        console.log('Usage: node cli.js path/to/project')
+(async function () {
+    if (process.argv.length < 4) {
+        console.log('Usage: node cli.js path/to/project project-name [--relativePaths]')
         // console.log('OR: node cli.js all')
     }
     try {
         const covPath = process.argv[2]
-            await cli(covPath)
-    } catch(err) {
+        const projectName = process.argv[3]
+        let relativePaths = false
+        if (process.argv.length === 5 && process.argv[4] === '--relativePaths')
+            relativePaths = true
+        await cli(covPath, projectName, relativePaths)
+    } catch (err) {
         console.error(`Error in running cli():`)
         console.error(err)
     }
