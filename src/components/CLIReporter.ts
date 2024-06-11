@@ -3,20 +3,21 @@ import { Coverage } from "./Coverage"
 import CoverageHelper from "./CoverageHelper"
 import CoverageReportProvider from "./CoverageReportProvider"
 import Logger from "./Logger"
+import * as fs from 'fs';
 
 
 /**
  * - Generates coverage reports.
  */
 export default class CLIReporter {
-     
+
     private static _getActionMessageForReaction(pinfo: PInfo, flattenedKey: string) {
         let [covType, covReaction] = flattenedKey.split('_')
         if (covType === COVERAGE_TYPE.settle) {
             return `p${pinfo.id}: Promise never \`${covReaction}ed\`. @ ${pinfo.location}`
         } else if (covType === COVERAGE_TYPE.register) {
             return `p${pinfo.id}: No \`${covReaction}\` reaction registered. @ ${pinfo.location}`
-        }  else { // if (covType === COVERAGE_TYPE.execute) {
+        } else { // if (covType === COVERAGE_TYPE.execute) {
             return `p${pinfo.id}: No \`${covReaction}\` reaction executed. @ ${pinfo.location}`
         }
     }
@@ -29,23 +30,23 @@ export default class CLIReporter {
         Logger.report(`----------`)
         Logger.report(`Coverage Report:`)
         Logger.report(`${coverageReport}`)
-                
-        Logger.report(`----------`)
-//         Logger.report(`Promise Report:`)
-//         Object.values(promiseMap).forEach((pInfo: PInfo) => {
-//             Logger.report(`    p${pInfo.id} - ${pInfo.type} @ ${pInfo.location}`)
-//             const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(pInfo)
-//             const s = promiseCovStatus
-//             const n = (v: any) => v === null ? 'N' : Number(v)
-//             Logger.report(
-// `    ${n(s.settle_fulfill)}${n(s.register_fulfill)}${n(s.execute_fulfill)}
-//     ${n(s.settle_reject)}${n(s.register_reject)}${n(s.execute_reject)}`)
-        
-//             // const unCoveredCount = Object.values(promiseCovStatus).filter(v => v === false).length
-//         })
 
-//         Logger.report(`----------`)
-        Logger.report(`Warns:`)       
+        Logger.report(`----------`)
+        //         Logger.report(`Promise Report:`)
+        //         Object.values(promiseMap).forEach((pInfo: PInfo) => {
+        //             Logger.report(`    p${pInfo.id} - ${pInfo.type} @ ${pInfo.location}`)
+        //             const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(pInfo)
+        //             const s = promiseCovStatus
+        //             const n = (v: any) => v === null ? 'N' : Number(v)
+        //             Logger.report(
+        // `    ${n(s.settle_fulfill)}${n(s.register_fulfill)}${n(s.execute_fulfill)}
+        //     ${n(s.settle_reject)}${n(s.register_reject)}${n(s.execute_reject)}`)
+
+        //             // const unCoveredCount = Object.values(promiseCovStatus).filter(v => v === false).length
+        //         })
+
+        //         Logger.report(`----------`)
+        Logger.report(`Warns:`)
         let warns: String[] = Object.values(promiseMap).flatMap((pInfo: PInfo) => {
             const promiseCovStatus = CoverageHelper.getCoverageStatusForPromiseFlattened(pInfo)
             // @ts-ignore
@@ -54,6 +55,17 @@ export default class CLIReporter {
         warns.forEach(warn => {
             Logger.report(`    ${warn}`)
         })
+
+        Logger.report(`----------`)
+        let reportFilePath = `${cov.projectPath()}/async-coverage-report.json`;
+        Logger.report(`Writing JSON report to ${reportFilePath}`)
+        for (const key in promiseMap) {
+            if (promiseMap.hasOwnProperty(key)) {
+                const promise = promiseMap[key];
+                promise.coverage = CoverageHelper.getCoverageStatusForPromiseFlattened(promise);
+            }
+        }
+        fs.writeFileSync(reportFilePath, JSON.stringify({ promiseMap, functionsMap }, null, 2));
     }
 
 
