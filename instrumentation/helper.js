@@ -2,7 +2,7 @@
 var BluebirdPromise = require('bluebird')
 const logger = require('./logger.js')
 
-var Helper = function () {}
+var Helper = function () { }
 
 var hasProp = {}.hasOwnProperty
 
@@ -23,10 +23,10 @@ Helper.prototype.isPromise = function isPromise(obj) {
     }
     if (this.isAnyBluebirdPromise(obj)) return true
     return false
-  } catch(err) {
+  } catch (err) {
     return false
   }
-  
+
 }
 
 Helper.prototype.isAnyBluebirdPromise = function isAnyBluebirdPromise(obj) {
@@ -62,28 +62,28 @@ Helper.prototype.isBluebirdPromiseCatch = function isBluebirdPromiseCatch(fun, b
 }
 
 Helper.prototype.isPromiseResolve = function isPromiseResolve(fun, base, result) {
-  return this.isPromise(base) 
-    && this.isPromise(result) 
+  return this.isPromise(base)
+    && this.isPromise(result)
     && fun.toString() === BluebirdPromise.resolve.toString()
 }
 
 Helper.prototype.isPromiseReject = function isPromiseReject(fun, base, result) {
-  return this.isPromise(base) 
-    && this.isPromise(result) 
+  return this.isPromise(base)
+    && this.isPromise(result)
     && fun.toString() === BluebirdPromise.reject.toString()
 }
 
 Helper.prototype.isPromiseAll = function isPromiseAll(fun, base, result) {
-  return this.isPromise(base) 
-    && this.isPromise(result) 
+  return this.isPromise(base)
+    && this.isPromise(result)
     && (fun.toString() === BluebirdPromise.all.toString()
       || fun.toString() === BluebirdPromise.allSettled.toString()
     )
 }
 
 Helper.prototype.isPromiseRace = function isPromiseRace(fun, base, result) {
-  return this.isPromise(base) 
-    && this.isPromise(result) 
+  return this.isPromise(base)
+    && this.isPromise(result)
     && fun.toString() === BluebirdPromise.race.toString()
 }
 
@@ -130,24 +130,24 @@ Helper.prototype.isInsideBlock = function isInsideBlock(innerLocation, outerLoca
 
 Helper.prototype.mapValuesFilter = function* filter(iterable, predicate) {
   var i = 0;
-  for (var item of iterable){
+  for (var item of iterable) {
     if (predicate(item))
       yield item;
   }
-    
+
 }
 
 Helper.prototype.PROMISE_TYPES = {
   NewPromise: 'NewPromise',
   AsyncFunction: 'AsyncFunction',
-  Await: 'Await',
+  // Await: 'Await',
   PromiseThen: 'PromiseThen',
   PromiseCatch: 'PromiseCatch',
   PromiseResolve: 'PromiseResolve',
   PromiseReject: 'PromiseReject',
   PromiseAll: 'PromiseAll',
   PromiseRace: 'PromiseRace',
-  CallbackArg: 'CallbackArg',
+  // CallbackArg: 'CallbackArg',
 }
 
 Helper.prototype.minimizePromise = function (p) {

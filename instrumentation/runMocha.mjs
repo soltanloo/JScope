@@ -1,7 +1,8 @@
 // DO NOT INSTRUMENT
 import Mocha from 'mocha'
 import glob from 'glob'
-import { Promise as ProxyPromise } from './promiseWrapper.js'
+import promiseWrapper from './promiseWrapper.js'
+const { Promise: ProxyPromise } = promiseWrapper;
 import { readFileSync } from 'fs';
 
 
@@ -10,7 +11,7 @@ import { readFileSync } from 'fs';
     readFileSync(new URL('./config.json', import.meta.url))
   );
   var testDir = process.argv[process.argv.length - 2]
-  var regex = process.argv[process.argv.length - 1].replaceAll('__SALT__', '')
+  var regex = process.argv[process.argv.length - 1].replace(/__SALT__/g, '')
   var testsRegex = `${testDir}/${regex}`
   console.log(testsRegex)
 

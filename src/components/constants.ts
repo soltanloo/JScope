@@ -16,19 +16,19 @@ export enum TestFrameworkEnum {
 export const COMMAND_IDS = {
     NEW_COVERAGE: 'jscope.new-coverage',
     MAIN_MENU_WEBVIEW: 'jscope.main-menu-webview',
-    
+
     PEEK_MENU_REFERENCES: 'jscope.peek-references',
     PEEK_MENU_LINKS: 'jscope.peek-links',
 
     ANNOTATE_EDITOR: 'jscope.annotate-editor',
-  };
+};
 
 export const ANALYSIS_PATHS = {
-    ANALYSIS:  'instrumentation/analysis.js',
-    NODEPROF_CMD:  'instrumentation/nodeprof.sh',
+    ANALYSIS: 'instrumentation/analysis.js',
+    NODEPROF_CMD: 'instrumentation/nodeprof.sh',
     FRAMEWORKS: {
         'mocha': 'instrumentation/runMocha.mjs',
-        'tap':   'instrumentation/runTap.js',
+        'tap': 'instrumentation/runTap.js',
     },
     TMP_LOG_DIR: '.__jscope__logs'
 }
@@ -66,28 +66,28 @@ export enum LOG_TAGS {
     TRY_CATCH = 'try-catch',
     AWAIT = 'await',
     AWAIT_PRE = 'awaitPre',
-  }
+}
 
 export enum CoverageGroupByEnum {
-    file= 'file',
+    file = 'file',
     promiseType = 'promiseType',
 }
 
 export type CoverageStatusType = {
-    settle: {fulfill: null | boolean, reject: null | boolean},
-    register: {fulfill: null | boolean, reject: null | boolean},
-    execute: {fulfill: null | boolean, reject: null | boolean}
+    settle: { fulfill: null | boolean, reject: null | boolean },
+    register: { fulfill: null | boolean, reject: null | boolean },
+    execute: { fulfill: null | boolean, reject: null | boolean }
 }
 
 export type CoverageStatusTypeFlattened = {
     // Null: invalid, should not consider in total states.
     // True: covered
     // False: not covered.
-    settle_fulfill: null | boolean, 
+    settle_fulfill: null | boolean,
     settle_reject: null | boolean,
-    register_fulfill: null | boolean, 
+    register_fulfill: null | boolean,
     register_reject: null | boolean,
-    execute_fulfill: null | boolean, 
+    execute_fulfill: null | boolean,
     execute_reject: null | boolean
 }
 
@@ -102,29 +102,30 @@ export type PInfo = {
     location: Location,
     iid: number,
     executorFids: string[], // promises created using a constructor have this field, points to the executor function.
-    refs: {id: ID, location: Location}[],
+    refs: { id: ID, location: Location }[],
     pids: Pid[],
-    links: {id: ID, location: Location}[],
+    links: { id: ID, location: Location }[],
     parent: Pid,
     _parents: Pid[], // For debugging purposes
     type: P_TYPE,
     _types: P_TYPE[], // For debugging purposes
     code?: string,
-    settle: {fulfill: any[], reject: any[]},
-    register: {fulfill: any[], reject: any[]},
-    execute: {fulfill: any[], reject: any[]},
+    settle: { fulfill: any[], reject: any[] },
+    register: { fulfill: any[], reject: any[] },
+    execute: { fulfill: any[], reject: any[] },
     _logs: any[], // For debugging purposes
+    coverage?: CoverageStatusTypeFlattened;
 }
 
 export type PMap = { [id: string]: PInfo; }
 
 export type ReactionLogObj = {
-    fid: string, 
-    wrapperFid: string, 
+    fid: string,
+    wrapperFid: string,
     tag: LOG_TAGS,
     location?: Location,
-    reaction: PROMISE_OUTCOME, 
-    value: any, 
+    reaction: PROMISE_OUTCOME,
+    value: any,
     path: string
 }
 

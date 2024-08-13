@@ -35,8 +35,12 @@ nodeprof () {
     if test -d $javaHome; then
         export JAVA_HOME=$javaHome
     fi
-#    cmd="mx jalangi --excl=\"node_modules,internal,spec,chai,css,promiseWrapper.js,test\" --scope=app --analysis \"${analysis}\" \"${runner}\" \"${testDir}\" \"${regex}\""
-    cmd="$GRAAL_HOME/bin/node --jvm --experimental-options --vm.Dtruffle.class.path.append=$GRAAL_HOME/tools/nodeprof.jar --nodeprof \"$NODEPROF_PATH/src/ch.usi.inf.nodeprof/js/jalangi.js\" --analysis ${analysis} ${runner} --nodeprof.ExcludeSource=\"node_modules,internal,spec,chai,css,promiseWrapper.js,test\" --nodeprof.Scope=app ${testDir} ${regex}"
+
+
+    excl="node_modules,internal,spec,chai,css,promiseWrapper.js,${testDir}"
+    
+    cmd="mx jalangi --excl=\"${excl}\" --scope=app --analysis \"${analysis}\" \"${runner}\" \"${testDir}\" \"${regex}\""
+    # cmd="$GRAAL_HOME/bin/node --jvm --experimental-options --vm.Dtruffle.class.path.append=$GRAAL_HOME/tools/nodeprof.jar --nodeprof \"$NODEPROF_PATH/src/ch.usi.inf.nodeprof/js/jalangi.js\" --analysis ${analysis} ${runner} --nodeprof.ExcludeSource=\"${excl}\" --nodeprof.Scope=app ${testDir} ${regex}"
     echo -e "$cmd"
     if [ "$#" -eq "5" ]; then
         eval "$cmd" | tee "${5}"
