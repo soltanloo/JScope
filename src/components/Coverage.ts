@@ -1,4 +1,4 @@
-import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid, ID, COVERAGE_TYPE, TryCatchLogVal } from './constants'
+import { LOG_TAGS, P_TYPE, PROMISE_OUTCOME, ReactionLogObj, PMap, PInfo, Pid, ID, COVERAGE_TYPE, TryCatchLogVal, TInfo } from './constants'
 import LogParser from './LogParser'
 import CoverageHelper from './CoverageHelper'
 import { compactStringify, isObjectEmpty, objectFilter, trimFilePath } from './utils'
@@ -109,7 +109,7 @@ export class Coverage {
             promiseMap = await this._handleLinkedPromiseSettlements(promiseMap)
 
             this._promiseMap = promiseMap
-            Logger.log(`> Promise map created: ${compactStringify(promiseMap, { maxLength: 200, indent: 2 })}`)
+            // Logger.log(`> Promise map created: ${compactStringify(promiseMap, { maxLength: 200, indent: 2 })}`)
         }
 
         // if(!!config?.query) {
@@ -135,6 +135,22 @@ export class Coverage {
                     log.location = projectPath + log.location.substring(relativePathStartInd)
                 }
             }
+            if (log.stackTrace) {
+
+                log.stackTrace = log.stackTrace.map((st: string) => {
+                    st = trimFilePath(st)
+
+                    let relativePathStartInd = st.indexOf(`/${this._projectName}/`) + this._projectName.length + 1;
+                    if (this._relativePaths) {
+                        return st.substring(relativePathStartInd + 1);
+                    } else {
+                        let projectPath = this._projectPath.endsWith('/') ? this._projectPath.slice(0, -1) : this._projectPath;
+                        return projectPath + st.substring(relativePathStartInd);
+                    }
+                });
+
+            }
+
             return log
         })
     }
@@ -153,7 +169,11 @@ export class Coverage {
     private async _addPromises(logs: any[]): Promise<PMap> {
 
         let promiseMap: PMap = {} // {[id: number]: PInfo}
-        logs.reduce((counter, log) => {
+        let currentTest: TInfo;
+        let promiseCount = logs.reduce((counter, log) => {
+            if (log.tag === LOG_TAGS.TEST_RUN) {
+                currentTest = log.testInfo;
+            }
             if (log.tag === LOG_TAGS.NEW_PROMISE) {
                 if (
                     // log.location.includes('test') ||
@@ -164,7 +184,9 @@ export class Coverage {
                 if (promiseMap.hasOwnProperty(id)) {
                     promiseMap[id].pids.push(log.cid)
                     promiseMap[id]._parents.push(log.base && log.base.__cid ? log.base.__cid : null)
-                    promiseMap[id]._types.push(log.ftype)
+                    promiseMap[id]._types.push(log.ftype);
+                    (promiseMap[id] as PInfo).stackTraces[log.cid] = log.stackTrace;
+                    (promiseMap[id] as PInfo).testInfo[log.cid] = currentTest;
                     if (log.executorFid) promiseMap[id].executorFids.push(log.executorFid)
                     // promiseMap[id]._logs.push(log)
                 } else if (this.getIdByPid(log.cid) && this.getIdByPid(log.cid) !== id) {
@@ -200,6 +222,8 @@ export class Coverage {
                             reject: [],
                         },
                         _logs: [],//[log],
+                        testInfo: { [log.cid]: currentTest },
+                        stackTraces: { [log.cid]: log.stackTrace }
                     }
                 }
 

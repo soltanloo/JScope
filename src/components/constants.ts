@@ -66,6 +66,7 @@ export enum LOG_TAGS {
     TRY_CATCH = 'try-catch',
     AWAIT = 'await',
     AWAIT_PRE = 'awaitPre',
+    TEST_RUN = 'test-run',
 }
 
 export enum CoverageGroupByEnum {
@@ -97,6 +98,13 @@ export type ID = string
 export type Location = `${string}:${string}:${string}:${string}:${string}`
 export type Pid = `p${number}`
 
+export type TInfo = {
+    file: string,
+    location?: Location,
+    titlePath: string[],
+    sourceCode?: string,
+}
+
 export type PInfo = {
     id: ID,
     location: Location,
@@ -115,6 +123,8 @@ export type PInfo = {
     execute: { fulfill: any[], reject: any[] },
     _logs: any[], // For debugging purposes
     coverage?: CoverageStatusTypeFlattened;
+    testInfo: { [cid: string]: TInfo },
+    stackTraces: { [cid: string]: Location[] },
 }
 
 export type PMap = { [id: string]: PInfo; }
